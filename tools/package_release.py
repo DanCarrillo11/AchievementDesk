@@ -10,7 +10,7 @@ from workspace import VERSION
 build = Path(sys.argv[1]).resolve()
 output = Path(sys.argv[2]).resolve()
 version = "AchievementDesk-" + VERSION
-portable = output / (version + "-Windows")
+portable = output / (version + "-Portable")
 if portable.exists():
     raise SystemExit("Choose a fresh release output folder.")
 output.mkdir(parents=True, exist_ok=True)
@@ -22,7 +22,7 @@ shutil.copytree(root / "licenses", portable / "licenses")
 if (root / "docs").is_dir():
     shutil.copytree(root / "docs", portable / "docs")
 
-with zipfile.ZipFile(output / (version + "-Windows.zip"), "w", zipfile.ZIP_DEFLATED) as archive:
+with zipfile.ZipFile(output / (version + "-Portable.zip"), "w", zipfile.ZIP_DEFLATED) as archive:
     for path in sorted(portable.rglob("*")):
         if path.is_file():
             archive.write(path, path.relative_to(output))
