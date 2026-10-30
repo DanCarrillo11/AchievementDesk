@@ -12,7 +12,7 @@ The Tests workflow runs synthetic and offscreen checks on Windows with Python
 reviewable artifacts but no public release. A change to `release-request.json`
 on `main` triggers the same build and additionally publishes a prerelease.
 It packages the portable and source ZIPs, compiles the Inno Setup installer, and
-computes SHA-256 checksums for verification. Only the Windows portable ZIP and
+computes SHA-256 checksums for verification. Only the Portable ZIP and
 setup executable are attached to public releases.
 
 ## Reproduce
@@ -25,7 +25,7 @@ python -m unittest discover -s tests -q
 python -m PyInstaller --clean --noconfirm AchievementDesk.spec
 python tools/package_release.py dist/AchievementDesk release
 $releaseRoot = (Resolve-Path release).Path
-$portableFolder = Join-Path $releaseRoot 'AchievementDesk-0.8.1-preview-Windows'
+$portableFolder = Join-Path $releaseRoot 'AchievementDesk-0.8.1-preview-Portable'
 ISCC.exe "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
 ```
 
