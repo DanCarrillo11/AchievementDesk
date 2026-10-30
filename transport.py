@@ -8,7 +8,7 @@ import time
 
 
 class WorkerClient:
-    def __init__(self, app_id, demo=False, library=False):
+    def __init__(self, app_id, demo=False, library=False, refresh_library=False):
         args = [sys.executable]
         if getattr(sys, "frozen", False):
             worker = Path(sys.executable).with_name("AchievementDeskWorker.exe")
@@ -17,7 +17,11 @@ class WorkerClient:
             args = [str(worker)]
         else:
             args += ["-u", str(Path(__file__).with_name("app.py"))]
+        if refresh_library and not library:
+            raise ValueError("Refresh requires a library worker.")
         args += ["--library"] if library else ["--worker", str(app_id)]
+        if refresh_library:
+            args += ["--refresh-library"]
         if demo:
             args += ["--demo"]
         self.process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
