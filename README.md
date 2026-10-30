@@ -18,9 +18,9 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**0.8.1-preview** is an early Windows application. This repository contains the
-source code; portable ZIP and setup downloads will be published separately later.
-There is no public stable release yet.
+**0.8.1-preview** is a public Windows x64 prerelease. Download the
+[Windows installer or portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v0.8.1-preview),
+or browse the source here. This is an early preview, **not a stable release**.
 
 Requires Windows x64 and Python 3.11+ to run from source. Real account operations
 also require the signed-in Steam desktop client to be online. No Steam password
@@ -111,9 +111,9 @@ writes. [Architecture](docs/ARCHITECTURE.md) explains the UI, isolated worker an
 Steam adapter. [Contributing](CONTRIBUTING.md) covers changes and validation.
 
 Build locally with `requirements-build.txt` and `AchievementDesk.spec`.
-The manually triggered **Build Windows preview** workflow prepares portable/source
-archives for later review; it does not publish a GitHub release. See
-[release preparation](docs/RELEASES.md).
+The **Build Windows preview** workflow prepares Windows archives and an optional
+installer. A version-matched release request on `main` publishes a verified GitHub
+prerelease after the automated build succeeds. See [release preparation](docs/RELEASES.md).
 
 ## Privacy and support
 
