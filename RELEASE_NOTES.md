@@ -14,8 +14,8 @@ First public Windows x64 **preview** of Achievement Desk, a desktop workspace fo
 
 - **AchievementDesk-0.8.1-preview-Setup.exe** — per-user Windows installer.
 - **AchievementDesk-0.8.1-preview-Windows.zip** — portable build (extract before launching).
-- **AchievementDesk-0.8.1-preview-source.zip** — source archive.
-- **SHA256SUMS.txt** — SHA-256 checksums for the downloadable files.
+
+The source code remains publicly available in this repository and GitHub's automatically generated source archives.
 
 ## Compatibility and safety
 
