@@ -1,6 +1,6 @@
-name: Keep only the public Windows downloads
+name: Maintain Achievement Desk release downloads
 
-# Run only when release-assets-request.json changes on main.
+# Apply an explicitly requested release-asset rename on main.
 on:
   push:
     branches: [main]
@@ -10,13 +10,13 @@ permissions:
   contents: write
 
 jobs:
-  prune:
+  rename:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
-      - name: Remove extra attached assets from requested release
+      - name: Rename portable ZIP in public release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -24,33 +24,25 @@ jobs:
           $request = Get-Content release-assets-request.json -Raw | ConvertFrom-Json
           $tag = [string]$request.tag
           if ($tag -ne 'v0.8.1-preview') { throw 'Unexpected release tag.' }
-          $api = "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
-          $release = (gh api $api | ConvertFrom-Json)
-          if ($LASTEXITCODE -ne 0) { throw 'Could not read the release.' }
-          $keep = @(
-            'AchievementDesk-0.8.1-preview-Setup.exe',
-            'AchievementDesk-0.8.1-preview-Windows.zip'
-          )
-          $remove = @(
-            'AchievementDesk-0.8.1-preview-source.zip',
-            'SHA256SUMS.txt'
-          )
-          foreach ($name in $keep) {
-            if (-not @($release.assets | Where-Object { $_.name -eq $name }).Count) {
-              throw "Required download is missing: $name"
-            }
+          $old = 'AchievementDesk-0.8.1-preview-Windows.zip'
+          $new = 'AchievementDesk-0.8.1-preview-Portable.zip'
+          $setup = 'AchievementDesk-0.8.1-preview-Setup.exe'
+          if ($request.portable_name -ne $new) { throw 'Unexpected portable file name.' }
+          $url = "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
+          $release = (gh api $url | ConvertFrom-Json)
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read release.' }
+          $asset = $release.assets | Where-Object { $_.name -eq $old } | Select-Object -First 1
+          if ($null -ne $asset) {
+            gh api --method PATCH "repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)" -f "name=$new"
+            if ($LASTEXITCODE -ne 0) { throw 'Could not rename portable asset.' }
           }
-          foreach ($name in $remove) {
-            $asset = $release.assets | Where-Object { $_.name -eq $name } | Select-Object -First 1
-            if ($null -ne $asset) {
-              gh api --method DELETE "repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)"
-              if ($LASTEXITCODE -ne 0) { throw "Could not remove asset: $name" }
-            }
-          }
-          $updated = (gh api $api | ConvertFrom-Json)
-          if ($LASTEXITCODE -ne 0) { throw 'Could not re-read release.' }
+          gh release edit $tag --repo $env:GITHUB_REPOSITORY --notes-file RELEASE_NOTES.md
+          if ($LASTEXITCODE -ne 0) { throw 'Could not update release notes.' }
+          $updated = (gh api $url | ConvertFrom-Json)
+          if ($LASTEXITCODE -ne 0) { throw 'Could not verify updated release.' }
           $remaining = @($updated.assets | ForEach-Object { $_.name })
-          if (@(Compare-Object $remaining $keep).Count -ne 0) {
-            throw "Unexpected remaining assets: $($remaining -join ', ')"
+          $expected = @($setup, $new)
+          if (@(Compare-Object $remaining $expected).Count -ne 0) {
+            throw "Unexpected release assets: $($remaining -join ', ')"
           }
-          Write-Host "Release verified with only setup and portable ZIP uploaded."
+          Write-Host 'Release now has only Setup.exe and Portable.zip.'
