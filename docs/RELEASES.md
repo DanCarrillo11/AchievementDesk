@@ -1,8 +1,8 @@
 # Release preparation
 
 The source repository is https://github.com/DanCarrillo11/AchievementDesk.
-No public release or downloadable Windows binary has been published yet.
-The existing portable build and setup are local preview deliverables.
+Windows preview releases include a portable ZIP, source ZIP, per-user setup and
+SHA256SUMS.txt. They are built from the tagged source by GitHub Actions.
 
 ## Repository checks
 
@@ -15,7 +15,8 @@ after independently validating the portable folder.
 
 ## Reproduce
 
-Use a Windows x64 environment, Python 3.11+ and Inno Setup 6.7.3's console compiler:
+Use a Windows x64 environment, Python 3.11+ and Inno Setup 6.7.x's console compiler
+(local packaging used 6.7.3; the Windows runner supplies its own 6.7.x version):
 
 ```powershell
 python -m pip install -r requirements-build.txt
@@ -36,13 +37,28 @@ Qt runtime and license texts. The installer includes the same complete folder.
 release before packaging. Generate SHA-256 checksums for the final archives/setup.
 The optional installer installs per user and retains preferences/history on uninstall.
 
-## Public release channel
+## Publishing
+
+Update `.github/release.json`, the English release notes and all three version
+locations together. Merge that reviewed request into `main` to trigger **Publish
+Windows release**. Manual dispatch from `main` is also supported. The workflow
+runs tests, reproduces icons, builds the app, checks its synthetic worker/GUI,
+compiles setup and checks temporary silent installation/uninstallation on the
+Windows runner. It then verifies ZIP integrity, private-data exclusions and hashes.
+
+Only the trusted main-branch publication job gets repository contents-write
+permission. It creates an unpublished draft, uploads all four files, verifies
+asset names/sizes/digests and publishes only the complete release. Published
+downloads are never replaced, and existing tags pointing elsewhere are rejected.
+An interrupted draft upload can be retried for the same source commit.
+
+## Manual release checklist
 
 1. Review the source commit and its completed Windows checks.
 2. Create a release with a semantic version tag, e.g. `v0.8.1-preview`.
 3. After explicit approval to publish downloads, upload the portable ZIP, source
    ZIP, setup executable and SHA256SUMS.txt. Mark preview releases as prereleases.
-4. Set that repository's `owner/name` in Settings → Updates and check it.
+4. Confirm the configured update lookup resolves the published tag.
 
 The checker reads at most 20 recent public releases. It skips drafts and invalid
 version tags, and skips prereleases for stable installations. It opens GitHub's
@@ -62,5 +78,6 @@ and explicitly synthetic states. A public source layout change can remove option
 icons or rarity temporarily; the native state and reviewed write workflow remain
 independent of those presentation requests.
 
-The Achievement Desk installer is compiled, inspected and checksummed. Its interactive installation
-and uninstallation have not been exercised on the user's desktop.
+The publication workflow tests silent installation/uninstallation on an ephemeral
+Windows runner. It does not run setup on the user's desktop. Broader upgrade and
+interactive installation coverage remain separate validation work.

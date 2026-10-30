@@ -2,7 +2,7 @@
   <img src="assets/app.png" width="76" alt="Achievement Desk icon">
   <h1>Achievement Desk</h1>
   <p>A focused desktop workspace for your Steam achievements.</p>
-  <p><strong>Windows x64 · Source preview · English interface</strong></p>
+  <p><strong>Windows x64 · Preview release · English interface</strong></p>
   <p>
     <a href="#features">Features</a> ·
     <a href="#getting-started">Getting started</a> ·
@@ -18,13 +18,18 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**0.8.1-preview** is an early Windows application. This repository contains the
-source code; portable ZIP and setup downloads will be published separately later.
-There is no public stable release yet.
+**0.8.1-preview** is the first public Windows preview. It is not a stable 1.0.
 
-Requires Windows x64 and Python 3.11+ to run from source. Real account operations
-also require the signed-in Steam desktop client to be online. No Steam password
-or API key is requested.
+**[Download portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v0.8.1-preview/AchievementDesk-0.8.1-preview-Windows.zip)** ·
+**[Download setup](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v0.8.1-preview/AchievementDesk-0.8.1-preview-Setup.exe)**
+
+[Release notes](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v0.8.1-preview) ·
+[Source archive](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v0.8.1-preview/AchievementDesk-0.8.1-preview-source.zip) ·
+[SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v0.8.1-preview/SHA256SUMS.txt)
+
+Downloads include their runtime; Python is not needed. Requires Windows x64 and
+the signed-in Steam desktop client to be online for real account operations.
+No Steam password or API key is requested.
 
 ## Features
 
@@ -53,7 +58,20 @@ or API key is requested.
 
 ## Getting started
 
-The demo uses synthetic data and never connects to Steam:
+1. Download the portable ZIP and extract the entire folder, or run the setup for
+   a per-user installation with optional desktop shortcut.
+2. Start Steam, sign in and stay online.
+3. Open `AchievementDesk.exe` and select a game. Keep the portable executable,
+   worker and `_internal/` folder together.
+4. Prepare changes with the switches, choose **Review changes**, inspect the
+   before/after list and explicitly choose **Apply to Steam**.
+
+Selecting a game, searching and switching filters do not send achievement changes.
+See the [user guide](docs/FEATURES.md) and [troubleshooting](docs/TROUBLESHOOTING.md).
+
+### Run from source
+
+Use Python 3.11+ x64. The demo uses synthetic data and never connects to Steam:
 
 ```powershell
 git clone https://github.com/DanCarrillo11/AchievementDesk.git
@@ -90,7 +108,7 @@ achievement helper is connected; the manager does not launch the game executable
 
 ## Validation
 
-- **163 automated checks** passed locally, using synthetic workers and Qt offscreen
+- **173 automated checks** passed locally, using synthetic workers and Qt offscreen
   rendering. CI runs the suite on Windows with Python 3.11 and 3.14.
 - The packaged 0.8.0 preview passed offscreen GUI and synthetic worker checks.
 - One deliberately authorized real relock was acknowledged by Steam and confirmed
@@ -112,7 +130,9 @@ Steam adapter. [Contributing](CONTRIBUTING.md) covers changes and validation.
 
 Build locally with `requirements-build.txt` and `AchievementDesk.spec`.
 The manually triggered **Build Windows preview** workflow prepares portable/source
-archives for later review; it does not publish a GitHub release. See
+archives without publishing. The **Publish Windows release** workflow builds and
+checks all downloads before publishing the release requested in `.github/release.json`.
+See
 [release preparation](docs/RELEASES.md).
 
 ## Privacy and support

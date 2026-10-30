@@ -2,6 +2,10 @@
 
 ## 0.8.1-preview
 
+- Publish the first public preview with source/portable archives, per-user setup,
+  release notes, download links and checksums from a verified Windows Actions build.
+- Configure the official update channel and migrate older empty channel settings
+  while preserving custom repositories.
 - Replace the shield/check application icon with the user-supplied trophy and
   sparkle, recolored in light blue and soft white on charcoal for the dark UI.
 - Export the committed logo master at seven Windows icon resolutions. Use the

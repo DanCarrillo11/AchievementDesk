@@ -57,7 +57,7 @@ on optional artwork requests.
 
 ## Portable or installation problems
 
-Public downloads have not been released yet. When available, extract the entire
+Download the preview from the repository's Releases page. Extract the entire
 portable archive, keeping `AchievementDesk.exe`, `AchievementDeskWorker.exe` and
 `_internal/` together. The optional setup is a per-user install. See
 [release preparation](RELEASES.md) for source builds and current validation limits.

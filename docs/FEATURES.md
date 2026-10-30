@@ -137,8 +137,9 @@ It compares version tags, ignores drafts, and offers a release-page link. It nev
 automatically downloads or runs an installer. Stable builds do not offer previews.
 
 **Source repository:** https://github.com/DanCarrillo11/AchievementDesk.
-No downloadable release has been published yet. The release field is intentionally
-empty until a release channel is ready. The checker is implemented and tested.
+Windows preview downloads are published under the repository's Releases page.
+The default update channel is `DanCarrillo11/AchievementDesk`; older empty-channel
+preferences migrate to it, while custom channels are preserved.
 See [Release instructions](RELEASES.md).
 
 ### Keyboard shortcuts
@@ -326,7 +327,7 @@ their bundled license information under `_internal`.
 
 ## Validation evidence
 
-- 163 automated tests passed: plans, stale state, account mismatch, snapshot
+- 173 automated tests passed: plans, stale state, account mismatch, snapshot
   failures, rejected/partial/unconfirmed operations, manifest discovery and the
   worker protocol using synthetic data, withdrawn-window UI checks and on-demand
   connection cleanup after success, failure and account changes, catalog parsing
@@ -374,7 +375,7 @@ their bundled license information under `_internal`.
 2. Validate trophy-award timing on a deliberately selected game, separately from
    current achievement progress and without assuming that relocking removes trophies.
 3. Expand real compatibility evidence across game-specific achievement restrictions.
-4. Publish the dedicated repository, configure its release channel and enable CI releases.
+4. Expand release-platform and upgrade validation before a stable 1.0.
 
 ## References
 

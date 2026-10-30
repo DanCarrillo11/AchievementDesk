@@ -6,9 +6,10 @@ from pathlib import Path
 import uuid
 
 VERSION = "0.8.1-preview"
+RELEASE_REPOSITORY = "DanCarrillo11/AchievementDesk"
 DEFAULTS = dict(reveal_hidden=False, compact=False, reduce_motion=False, online_art=True,
                 achievement_sort="Steam order", library_filter="All games", width=1280, height=900,
-                release_repository="", online_completion=True)
+                release_repository=RELEASE_REPOSITORY, online_completion=True)
 
 
 def atomic_json(path, value):
@@ -41,6 +42,9 @@ class Workspace:
                 self.settings[key] = value
         self.settings["width"] = min(3000, max(1020, self.settings["width"]))
         self.settings["height"] = min(2000, max(760, self.settings["height"]))
+        # Earlier local previews stored an empty channel before releases existed.
+        if not self.settings["release_repository"].strip():
+            self.settings["release_repository"] = RELEASE_REPOSITORY
         self.accounts = data.get("accounts", {}) if isinstance(data.get("accounts"), dict) else {}
 
     def save(self):

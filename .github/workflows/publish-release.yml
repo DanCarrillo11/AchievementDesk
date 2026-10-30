@@ -1,0 +1,73 @@
+name: Publish Windows release
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/release.json']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-windows-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+          cache: pip
+      - name: Validate requested version
+        id: release
+        run: python tools/publish_release.py validate
+      - name: Install build dependencies
+        run: python -m pip install -r requirements-build.txt
+      - name: Run synthetic and offscreen tests
+        run: python -m unittest discover -s tests -v
+      - name: Reproduce application icons
+        run: |
+          python tools/build_assets.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code -- assets/app.ico assets/app.png
+      - name: Build Windows application
+        run: python -m PyInstaller --clean --noconfirm AchievementDesk.spec
+      - name: Check packaged application without Steam
+        run: python tools/verify_packaged.py dist/AchievementDesk
+      - name: Package source and portable archives
+        run: python tools/package_release.py dist/AchievementDesk release
+      - name: Compile per-user installer
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path -LiteralPath $compiler)) { throw 'Inno Setup 6 is not available on this Windows runner.' }
+          $releaseRoot = (Resolve-Path release).Path
+          $portableFolder = Join-Path $releaseRoot "AchievementDesk-$env:APP_VERSION-Windows"
+          & $compiler /Q "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Check installation and uninstallation
+        shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.release.outputs.version }}
+        run: python tools/verify_packaged.py "release/AchievementDesk-$env:APP_VERSION-Windows" --installer "release/AchievementDesk-$env:APP_VERSION-Setup.exe"
+      - name: Generate and verify checksums
+        run: python tools/publish_release.py checksums release
+      - name: Publish complete preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/publish_release.py publish release

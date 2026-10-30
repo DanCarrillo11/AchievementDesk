@@ -15,6 +15,8 @@ if portable.exists():
     raise SystemExit("Choose a fresh release output folder.")
 output.mkdir(parents=True, exist_ok=True)
 shutil.copytree(build, portable)
+(portable / "assets").mkdir(exist_ok=True)
+shutil.copy2(root / "assets" / "app.png", portable / "assets" / "app.png")
 documents = ["README.md", "LICENSE", "THIRD_PARTY_NOTICES.txt", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "CODE_OF_CONDUCT.md"]
 for name in documents:
     shutil.copy2(root / name, portable / name)

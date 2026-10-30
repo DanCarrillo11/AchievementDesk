@@ -35,6 +35,16 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(Workspace(self.root).settings["width"], 1020)
         self.assertFalse(Workspace(self.root).settings["compact"])
 
+    def test_empty_preview_release_channel_migrates_to_project(self):
+        self.workspace.settings["release_repository"] = ""
+        self.workspace.save()
+        self.assertEqual(Workspace(self.root).settings["release_repository"], "DanCarrillo11/AchievementDesk")
+
+    def test_custom_release_channel_is_preserved(self):
+        self.workspace.settings["release_repository"] = "owner/CustomChannel"
+        self.workspace.save()
+        self.assertEqual(Workspace(self.root).settings["release_repository"], "owner/CustomChannel")
+
     def test_favorites_and_recents_are_account_scoped(self):
         self.workspace.favorite("A", 10)
         self.workspace.visit("A", 10)
