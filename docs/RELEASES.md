@@ -11,8 +11,9 @@ The Tests workflow runs synthetic and offscreen checks on Windows with Python
 3.11 and 3.14. It does not connect to a live Steam account. The separate **Build Windows preview** workflow supports manual runs that produce
 reviewable artifacts but no public release. A change to `release-request.json`
 on `main` triggers the same build and additionally publishes a prerelease.
-It packages the portable/source ZIPs, compiles the Inno Setup installer, and
-computes SHA-256 checksums before publication.
+It packages the portable and source ZIPs, compiles the Inno Setup installer, and
+computes SHA-256 checksums for verification. Only the Windows portable ZIP and
+setup executable are attached to public releases.
 
 ## Reproduce
 
@@ -43,8 +44,9 @@ The optional installer installs per user and retains preferences/history on unin
 2. With approval to publish, set `release-request.json` to the exact version in
    `workspace.VERSION`, `version_info.txt` and `installer.iss`, and commit it to
    `main`. The workflow builds and publishes that version as a GitHub prerelease.
-3. Confirm that the release contains the Windows portable ZIP, source ZIP, setup
-   executable and `SHA256SUMS.txt`. Its tag is `v<version>`.
+3. Confirm that the release has exactly two uploaded assets: the Windows portable
+   ZIP and the setup executable. Its tag is `v<version>`. GitHub also generates its
+   own source archives automatically; these are not uploaded release assets.
 4. Set that repository's `owner/name` in Settings → Updates and check it.
 
 The checker reads at most 20 recent public releases. It skips drafts and invalid
