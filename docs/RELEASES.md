@@ -1,17 +1,18 @@
 # Release preparation
 
 The source repository is https://github.com/DanCarrillo11/AchievementDesk.
-No public release or downloadable Windows binary has been published yet.
-The existing portable build and setup are local preview deliverables.
+The first public Windows preview is requested through `release-request.json`.
+The release workflow creates the downloadable Windows packages only after the
+build and tests complete. No stable version is claimed.
 
 ## Repository checks
 
 The Tests workflow runs synthetic and offscreen checks on Windows with Python
-3.11 and 3.14. It does not connect to a live Steam account. The separate
-**Build Windows preview** workflow runs only when manually dispatched; it creates
-portable/source workflow artifacts and checksums without publishing a release.
-It does not build the optional Inno Setup installer. Run that compilation locally
-after independently validating the portable folder.
+3.11 and 3.14. It does not connect to a live Steam account. The separate **Build Windows preview** workflow supports manual runs that produce
+reviewable artifacts but no public release. A change to `release-request.json`
+on `main` triggers the same build and additionally publishes a prerelease.
+It packages the portable/source ZIPs, compiles the Inno Setup installer, and
+computes SHA-256 checksums before publication.
 
 ## Reproduce
 
@@ -38,10 +39,12 @@ The optional installer installs per user and retains preferences/history on unin
 
 ## Public release channel
 
-1. Review the source commit and its completed Windows checks.
-2. Create a release with a semantic version tag, e.g. `v0.8.1-preview`.
-3. After explicit approval to publish downloads, upload the portable ZIP, source
-   ZIP, setup executable and SHA256SUMS.txt. Mark preview releases as prereleases.
+1. Review the source commit, release notes and the completed Windows checks.
+2. With approval to publish, set `release-request.json` to the exact version in
+   `workspace.VERSION`, `version_info.txt` and `installer.iss`, and commit it to
+   `main`. The workflow builds and publishes that version as a GitHub prerelease.
+3. Confirm that the release contains the Windows portable ZIP, source ZIP, setup
+   executable and `SHA256SUMS.txt`. Its tag is `v<version>`.
 4. Set that repository's `owner/name` in Settings → Updates and check it.
 
 The checker reads at most 20 recent public releases. It skips drafts and invalid
