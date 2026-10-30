@@ -72,7 +72,7 @@ jobs:
           if (-not (Test-Path -LiteralPath $compiler)) { throw 'Inno Setup compiler is missing.' }
           $request = Get-Content release-request.json -Raw | ConvertFrom-Json
           $output = (Resolve-Path release).Path
-          $source = Join-Path $output ("AchievementDesk-" + $request.version + "-Windows")
+          $source = Join-Path $output ("AchievementDesk-" + $request.version + "-Portable")
           & $compiler "/DBuildSource=$source" "/DOutputFolder=$output" installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
           $setup = Join-Path $output ("AchievementDesk-" + $request.version + "-Setup.exe")
@@ -84,13 +84,13 @@ jobs:
             $hash = Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
             '{0}  {1}' -f $hash.Hash.ToLowerInvariant(), $_.Name
           }
-          if (@($checksumLines).Count -ne 3) { throw 'Expected source ZIP, Windows ZIP and setup executable.' }
+          if (@($checksumLines).Count -ne 3) { throw 'Expected source ZIP, portable ZIP and setup executable.' }
           $checksumLines | Set-Content -LiteralPath release/SHA256SUMS.txt -Encoding ascii
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: AchievementDesk-Windows-preview
           path: |
-            release/*-Windows.zip
+            release/*-Portable.zip
             release/*-Setup.exe
           if-no-files-found: error
           retention-days: 14
@@ -103,6 +103,6 @@ jobs:
           $request = Get-Content release-request.json -Raw | ConvertFrom-Json
           $tag = "v$($request.version)"
           $setup = (Resolve-Path ("release/AchievementDesk-" + $request.version + "-Setup.exe")).Path
-          $portable = (Resolve-Path ("release/AchievementDesk-" + $request.version + "-Windows.zip")).Path
+          $portable = (Resolve-Path ("release/AchievementDesk-" + $request.version + "-Portable.zip")).Path
           gh release create $tag $setup $portable --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Achievement Desk $tag" --notes-file RELEASE_NOTES.md --prerelease
           if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }
