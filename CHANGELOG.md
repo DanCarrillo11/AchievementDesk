@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.2-preview
+
+- Cache each verified Steam account's discovered game library on disk so
+  subsequent launches avoid rescanning the full public App ID catalog.
+- Keep the cache separate between Steam accounts and verify identity before
+  loading cached game metadata.
+- Add a manual full refresh to discover additions, removals and changes in
+  installed games, while preserving a previous valid snapshot on errors.
+- Validate cached IDs, names, installed flags and icon hashes, and write
+  snapshots atomically. No credentials, achievements or game save data
+  are stored in the library cache.
+- Add regression tests for the startup path, explicit refresh, invalid
+  metadata, account isolation and Steam identity failures.
+
 ## 0.8.1-preview
 
 - Replace the shield/check application icon with the user-supplied trophy and
