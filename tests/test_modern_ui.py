@@ -185,6 +185,31 @@ class ModernUITests(unittest.TestCase):
         self.window.game_search.setText("10")
         self.assertEqual(self.window.games.count(), 1)
 
+    def test_startup_loads_saved_library_without_full_scan(self):
+        self.window.demo = False
+        reply = dict(account_id="76561198000000001", cached=True,
+                     games=[asdict(Game(10, "Cached game", True))])
+        with patch("modern_ui.WorkerClient") as worker, \
+             patch.object(self.window, "task", side_effect=lambda job, done, **kwargs: done(job())):
+            worker.return_value.receive.return_value = reply
+            self.window.load_library()
+            worker.assert_called_once_with(0, library=True, refresh_library=False)
+            worker.return_value.close.assert_called_once()
+        self.assertEqual([game.app_id for game in self.window.library], [10])
+        self.assertIn("Saved library", self.window.status.text())
+
+    def test_refresh_action_forces_full_scan(self):
+        self.window.demo = False
+        reply = dict(account_id="76561198000000001", cached=False,
+                     games=[asdict(Game(30, "New game", False))])
+        with patch("modern_ui.WorkerClient") as worker, \
+             patch.object(self.window, "task", side_effect=lambda job, done, **kwargs: done(job())):
+            worker.return_value.receive.return_value = reply
+            self.window.refresh_library_action.trigger()
+            worker.assert_called_once_with(0, library=True, refresh_library=True)
+        self.assertEqual([game.app_id for game in self.window.library], [30])
+        self.assertIn("Steam library refreshed", self.window.status.text())
+
     def test_selection_batch_prepares_only_selected(self):
         self.window.select_row("EXPLORER")
         self.window.select_row("COLLECTOR", True)
