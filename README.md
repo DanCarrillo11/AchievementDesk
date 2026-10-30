@@ -31,6 +31,10 @@ or API key is requested.
 - **Your library, in one window.** Search by title or App ID, browse with A–Z
   filters and 100-game pages, and keep favorites and recent games per account.
   Accessible games can appear even when they are not installed.
+- **Fast repeat launches.** After the first complete Steam library discovery, an
+  account-specific snapshot loads on later launches once the signed-in Steam
+  account is verified. Use **Library tools → Refresh library** or **Ctrl+R** on
+  the library page to check for newly added, removed or installed games.
 - **Clear achievement switches.** Prepare unlocks or relocks, search and filter
   the full list, and review every change before applying it to Steam.
 - **Achievement sets and trophies.** Read Steam's reported set completion, filter
@@ -117,7 +121,11 @@ prerelease after the automated build succeeds. See [release preparation](docs/RE
 
 ## Privacy and support
 
-Local data is stored under `%LOCALAPPDATA%\AchievementDesk`. Optional completion
+Local data is stored under `%LOCALAPPDATA%\AchievementDesk`. The
+`library-cache` folder keeps only per-account game IDs, names, installed flags
+and Steam icon hashes. The snapshot is only a display shortcut, not proof of
+current ownership or editable achievement support. It does not contain login
+credentials or achievements. Corrupt caches are ignored and rebuilt. Optional completion
 checks send account/App IDs directly to Steam Community without cookies or
 credentials. Artwork and completion requests can be disabled separately.
 Read the [privacy guide](docs/PRIVACY.md), [troubleshooting guide](docs/TROUBLESHOOTING.md)
