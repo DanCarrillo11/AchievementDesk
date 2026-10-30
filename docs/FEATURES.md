@@ -3,7 +3,7 @@
 A Windows desktop preview for reading and managing Steam achievements through
 your locally signed-in Steam client. Interface and documentation are in English.
 
-**Version: 0.8.0-preview.** Not affiliated with Valve. This is an independent
+**Version: 0.8.1-preview.** Not affiliated with Valve. This is an independent
 Python implementation, with a Steam adapter adapted from SAM.API's interface
 layouts and connection approach. See THIRD_PARTY_NOTICES.txt.
 
@@ -28,12 +28,12 @@ and achievement states. This is not a screenshot of anyone's Steam account.*
 - Local activity history with confirmed, partial, rejected and unconfirmed outcomes.
 - Saved preferences, window size, comfortable/compact rows and reduced motion.
 - Read progress, read cancellation and retry actions; applying changes cannot be cancelled.
-- Original Windows icon, application version metadata and keyboard shortcuts.
+- Application icon, application version metadata and keyboard shortcuts.
 - Portable distribution, optional per-user installer and on-demand GitHub release lookup.
 
 ## Optional installation
 
-Run **AchievementDesk-0.8.0-preview-Setup.exe** to install for the current Windows
+Run **AchievementDesk-0.8.1-preview-Setup.exe** to install for the current Windows
 user, with a Start menu shortcut and optional desktop shortcut. Administrator
 access is not required. The app does not open automatically after installation
 unless you select that option. Uninstalling retains local preferences and history.

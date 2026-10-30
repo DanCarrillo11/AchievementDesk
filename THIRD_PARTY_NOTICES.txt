@@ -42,6 +42,11 @@ The LGPL-3.0 and referenced GPL license texts are included. The Qt libraries
 remain separate replaceable files in the portable runtime under _internal/.
 Windows Segoe UI fonts are used from the host system and are not redistributed.
 
+Application logo:
+The trophy-and-sparkle application mark was supplied by the project owner and
+recolored for the charcoal-and-blue interface. See docs/BRANDING.md. It is separate
+from Steam/game artwork and does not represent affiliation with Valve.
+
 Public Steam presentation data:
 Optional small Steam game-list icons and achievement icons are read from the
 local Steam image cache or requested from Valve's public Steam CDN and cached
