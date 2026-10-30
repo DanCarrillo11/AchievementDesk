@@ -7,7 +7,7 @@
 [Setup]
 AppId={{C40ABBD0-6868-467A-AC2D-D27F4E53B01A}
 AppName=Achievement Desk
-AppVersion=0.8.1-preview
+AppVersion=0.8.2-preview
 AppPublisher=DanCarrillo11
 DefaultDirName={localappdata}\Programs\Achievement Desk
 DefaultGroupName=Achievement Desk
@@ -15,7 +15,7 @@ PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir={#OutputFolder}
-OutputBaseFilename=AchievementDesk-0.8.1-preview-Setup
+OutputBaseFilename=AchievementDesk-0.8.2-preview-Setup
 SetupIconFile=assets\app.ico
 UninstallDisplayIcon={app}\AchievementDesk.exe
 Compression=lzma2
