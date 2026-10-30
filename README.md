@@ -18,8 +18,8 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**0.8.1-preview** is a public Windows x64 prerelease. Download the
-[Windows installer or portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v0.8.1-preview),
+**0.8.2-preview** is a public Windows x64 prerelease. Download the
+[Windows installer or portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v0.8.2-preview),
 or browse the source here. This is an early preview, **not a stable release**.
 
 Requires Windows x64 and Python 3.11+ to run from source. Real account operations
@@ -94,8 +94,9 @@ achievement helper is connected; the manager does not launch the game executable
 
 ## Validation
 
-- **163 automated checks** passed locally, using synthetic workers and Qt offscreen
-  rendering. CI runs the suite on Windows with Python 3.11 and 3.14.
+- Automated checks run on Windows with Python 3.11 and 3.14, including
+  synthetic data, offscreen Qt rendering, and regression tests for saved
+  Steam libraries and account isolation.
 - The packaged 0.8.0 preview passed offscreen GUI and synthetic worker checks.
 - One deliberately authorized real relock was acknowledged by Steam and confirmed
   in a fresh worker process, with all 12 other achievement states/dates unchanged.
