@@ -43,23 +43,36 @@ def run(app_id, demo=False):
             session.close()
 
 
-def run_library():
-    """Read the signed-in account's access for catalog IDs; never request stats."""
+def run_library(refresh=False):
+    """Identify Steam first; reuse this account's snapshot unless refreshed."""
     import os
     from pathlib import Path
     from catalog import catalog_ids
     from library import discover_owned, installed_games
+    from library_cache import load_library_cache, save_library_cache
     from native import SteamLibrarySession
     session = None
     try:
         data_dir = Path(os.environ.get("LOCALAPPDATA", str(Path.cwd()))) / "AchievementDesk"
-        ids = catalog_ids(data_dir)
-        local = installed_games()
         session = SteamLibrarySession()
-        def progress(scanned, total, found):
-            print(json.dumps(dict(progress=True, scanned=scanned, total=total, found=found)), flush=True)
-        games = discover_owned(session, ids, local, progress)
-        result = dict(ok=True, account_id=str(session.account_id), games=[asdict(game) for game in games])
+        session.verify_identity()
+        account_id = str(session.account_id)
+        games = None if refresh else load_library_cache(data_dir, account_id)
+        cached = games is not None
+        if games is None:
+            ids = catalog_ids(data_dir)
+            local = installed_games()
+            def progress(scanned, total, found):
+                print(json.dumps(dict(progress=True, scanned=scanned, total=total, found=found)), flush=True)
+            games = discover_owned(session, ids, local, progress)
+            # A completed scan is still usable when the cache cannot be written.
+            try:
+                save_library_cache(data_dir, account_id, games)
+            except (OSError, ValueError):
+                pass
+        session.verify_identity()
+        result = dict(ok=True, account_id=account_id, cached=cached,
+                      games=[asdict(game) for game in games])
     except Exception as exc:
         result = dict(ok=False, error=str(exc))
     finally:
