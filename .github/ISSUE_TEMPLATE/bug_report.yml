@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible problem in Achievement Desk.
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read docs/TROUBLESHOOTING.md first. Remove account IDs, credentials and personal library details from screenshots or logs. Never attach your full local data folder.
+  - type: input
+    id: version
+    attributes:
+      label: Application version
+      placeholder: 0.8.0-preview / source commit
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Windows version and Steam channel
+      placeholder: Windows 11 x64, Steam stable
+    validations:
+      required: true
+  - type: input
+    id: app_id
+    attributes:
+      label: Game App ID, if relevant
+      description: Public game identifier only. Do not enter your Steam account ID.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the action, expected result and actual result. Avoid retrying an unconfirmed achievement write.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Error message or redacted screenshot
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I removed credentials and personal account information.
+          required: true

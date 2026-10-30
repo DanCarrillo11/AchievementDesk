@@ -1,0 +1,68 @@
+Achievement Desk contains an altered Python adaptation of the Steam connection
+approach and versioned interface layouts from Steam Achievement Manager / SAM.API.
+Upstream: https://github.com/gibbed/SteamAchievementManager
+This project is not the original SAM and is not affiliated with its author.
+
+zlib License
+
+Copyright (c) 2024 Rick (rick 'at' gibbed 'dot' us)
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.
+
+Steam and Steamworks are trademarks of Valve Corporation. No Valve binaries
+are distributed with Achievement Desk. Python/Tcl/Tk runtime notices are
+retained in the packaged runtime. PyInstaller's bootloader has a distribution
+exception permitting distribution of the resulting application.
+
+Qt / PySide6 / Shiboken:
+Version 6.10.3. Copyright The Qt Company Ltd. and contributors.
+The new frontend uses the dynamically loaded Qt Core, Gui and Widgets libraries
+and the PySide6/Shiboken bindings. No Qt source code was modified.
+Upstream source: https://code.qt.io/cgit/qt/qtbase.git/
+Bindings source: https://code.qt.io/cgit/pyside/pyside-setup.git/
+License alternatives and notices supplied by upstream are retained in licenses/.
+The LGPL-3.0 and referenced GPL license texts are included. The Qt libraries
+remain separate replaceable files in the portable runtime under _internal/.
+Windows Segoe UI fonts are used from the host system and are not redistributed.
+
+Public Steam presentation data:
+Optional small Steam game-list icons and achievement icons are read from the
+local Steam image cache or requested from Valve's public Steam CDN and cached
+on the user's device. The game-list icon hash is read from client metadata;
+public app hubs provide a fallback when that metadata is absent. Store covers
+are not used for game-list thumbnails. These images are not bundled in the
+executable. Game artwork, achievement names and associated trademarks remain
+the property of their respective owners. Documentation screenshots show actual
+widgets with public artwork and synthetic account/states, not a user's account.
+Global completion percentages come from the public Steam Web API; image
+filenames come from Steam Community's public global-achievement pages.
+
+Steam achievement-set data:
+Set definitions and reported account completion are read from Steam Community's
+server-rendered achievement pages. No cookies or credentials are used. Steam
+controls completion awards and persistence. No Valve JavaScript is copied or
+executed by the application; the embedded JSON is parsed as data.
+
+Public App ID catalog:
+The bundled assets/catalog.json contains factual numeric Steam App IDs derived
+from https://gib.me/sam/games.xml, the public game list used by SAM. Source and
+retrieval time are embedded in the catalog. Names, ownership and personal library
+information are not included in this catalog. Updates contact that third-party
+host only when the user chooses Update catalog; no account information is sent.

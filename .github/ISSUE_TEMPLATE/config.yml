@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Troubleshooting and compatibility
+    url: https://github.com/DanCarrillo11/AchievementDesk/blob/main/docs/TROUBLESHOOTING.md
+    about: Check common Steam connection, completion and installation questions.
+  - name: Security reporting
+    url: https://github.com/DanCarrillo11/AchievementDesk/blob/main/SECURITY.md
+    about: Do not publish sensitive details in a public issue.

@@ -2,11 +2,11 @@
   <img src="assets/app.png" width="76" alt="Achievement Desk icon">
   <h1>Achievement Desk</h1>
   <p>A focused desktop workspace for your Steam achievements.</p>
-  <p><strong>Windows x64 � Source preview � English interface</strong></p>
+  <p><strong>Windows x64 · Source preview · English interface</strong></p>
   <p>
-    <a href="#features">Features</a> �
-    <a href="#getting-started">Getting started</a> �
-    <a href="docs/FEATURES.md">User guide</a> �
+    <a href="#features">Features</a> ·
+    <a href="#getting-started">Getting started</a> ·
+    <a href="docs/FEATURES.md">User guide</a> ·
     <a href="docs/TROUBLESHOOTING.md">Troubleshooting</a>
   </p>
 </div>
@@ -28,7 +28,7 @@ or API key is requested.
 
 ## Features
 
-- **Your library, in one window.** Search by title or App ID, browse with A�Z
+- **Your library, in one window.** Search by title or App ID, browse with A–Z
   filters and 100-game pages, and keep favorites and recent games per account.
   Accessible games can appear even when they are not installed.
 - **Clear achievement switches.** Prepare unlocks or relocks, search and filter
