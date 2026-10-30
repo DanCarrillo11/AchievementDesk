@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import uuid
 
-VERSION = "0.8.0-preview"
+VERSION = "0.8.1-preview"
 DEFAULTS = dict(reveal_hidden=False, compact=False, reduce_motion=False, online_art=True,
                 achievement_sort="Steam order", library_filter="All games", width=1280, height=900,
                 release_repository="", online_completion=True)

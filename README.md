@@ -18,7 +18,7 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**0.8.0-preview** is an early Windows application. This repository contains the
+**0.8.1-preview** is an early Windows application. This repository contains the
 source code; portable ZIP and setup downloads will be published separately later.
 There is no public stable release yet.
 

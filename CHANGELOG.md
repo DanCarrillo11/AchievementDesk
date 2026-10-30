@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.1-preview
+
+- Replace the shield/check application icon with the user-supplied trophy and
+  sparkle, recolored in light blue and soft white on charcoal for the dark UI.
+- Export the committed logo master at seven Windows icon resolutions. Use the
+  same branding in the header, executable, installer and README, with refreshed
+  screenshots of the actual Qt interface.
+
 ## Unreleased — repository preparation
 
 - Prepare the AchievementDesk source repository with an English README, real UI

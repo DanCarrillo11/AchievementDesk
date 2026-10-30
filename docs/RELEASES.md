@@ -23,7 +23,7 @@ python -m unittest discover -s tests -q
 python -m PyInstaller --clean --noconfirm AchievementDesk.spec
 python tools/package_release.py dist/AchievementDesk release
 $releaseRoot = (Resolve-Path release).Path
-$portableFolder = Join-Path $releaseRoot 'AchievementDesk-0.8.0-preview-Windows'
+$portableFolder = Join-Path $releaseRoot 'AchievementDesk-0.8.1-preview-Windows'
 ISCC.exe "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
 ```
 
@@ -39,7 +39,7 @@ The optional installer installs per user and retains preferences/history on unin
 ## Public release channel
 
 1. Review the source commit and its completed Windows checks.
-2. Create a release with a semantic version tag, e.g. `v0.8.0-preview`.
+2. Create a release with a semantic version tag, e.g. `v0.8.1-preview`.
 3. After explicit approval to publish downloads, upload the portable ZIP, source
    ZIP, setup executable and SHA256SUMS.txt. Mark preview releases as prereleases.
 4. Set that repository's `owner/name` in Settings → Updates and check it.
