@@ -1,0 +1,56 @@
+name: Keep only the public Windows downloads
+
+# Run only when release-assets-request.json changes on main.
+on:
+  push:
+    branches: [main]
+    paths: ['release-assets-request.json']
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Remove extra attached assets from requested release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $request = Get-Content release-assets-request.json -Raw | ConvertFrom-Json
+          $tag = [string]$request.tag
+          if ($tag -ne 'v0.8.1-preview') { throw 'Unexpected release tag.' }
+          $api = "repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
+          $release = (gh api $api | ConvertFrom-Json)
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read the release.' }
+          $keep = @(
+            'AchievementDesk-0.8.1-preview-Setup.exe',
+            'AchievementDesk-0.8.1-preview-Windows.zip'
+          )
+          $remove = @(
+            'AchievementDesk-0.8.1-preview-source.zip',
+            'SHA256SUMS.txt'
+          )
+          foreach ($name in $keep) {
+            if (-not @($release.assets | Where-Object { $_.name -eq $name }).Count) {
+              throw "Required download is missing: $name"
+            }
+          }
+          foreach ($name in $remove) {
+            $asset = $release.assets | Where-Object { $_.name -eq $name } | Select-Object -First 1
+            if ($null -ne $asset) {
+              gh api --method DELETE "repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)"
+              if ($LASTEXITCODE -ne 0) { throw "Could not remove asset: $name" }
+            }
+          }
+          $updated = (gh api $api | ConvertFrom-Json)
+          if ($LASTEXITCODE -ne 0) { throw 'Could not re-read release.' }
+          $remaining = @($updated.assets | ForEach-Object { $_.name })
+          if (@(Compare-Object $remaining $keep).Count -ne 0) {
+            throw "Unexpected remaining assets: $($remaining -join ', ')"
+          }
+          Write-Host "Release verified with only setup and portable ZIP uploaded."
