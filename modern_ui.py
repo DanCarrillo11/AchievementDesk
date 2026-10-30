@@ -238,7 +238,7 @@ class Desk(QMainWindow):
         self.games.verticalScrollBar().valueChanged.connect(self.request_visible_game_icons)
         left.addWidget(self.games, 1)
         self.library_tools_menu = QMenu(self)
-        self.refresh_library_action = self.action(self.library_tools_menu, "Refresh library", self.load_library)
+        self.refresh_library_action = self.action(self.library_tools_menu, "Refresh library", lambda checked=False: self.load_library(force=True))
         self.add_id_action = self.action(self.library_tools_menu, "Open game by App ID…", self.open_id)
         self.library_tools_menu.addSeparator()
         self.catalog_action = self.action(self.library_tools_menu, "Update game catalog", self.refresh_catalog)
@@ -645,7 +645,7 @@ class Desk(QMainWindow):
 
     def refresh_current_view(self):
         if self.content_stack.currentWidget() is self.library_page:
-            self.load_library()
+            self.load_library(force=True)
         else:
             self.refresh()
 
@@ -782,7 +782,7 @@ class Desk(QMainWindow):
         return not self.desired or QMessageBox.question(self, "Discard changes?",
             "Discard the pending changes? Nothing has been sent to Steam.") == QMessageBox.StandardButton.Yes
 
-    def load_library(self):
+    def load_library(self, force=False):
         if self.busy or not self.discard_queue():
             return
         if self.client:
@@ -802,7 +802,7 @@ class Desk(QMainWindow):
             self.connect(self.library[0])
             return
         self.account_label.setText("Finding your library…")
-        self.set_status("Detecting your Steam library…")
+        self.set_status("Refreshing your Steam library…" if force else "Checking Steam account and saved library…")
         def report(info):
             text = f"Finding your games · {info['scanned']:,} of {info['total']:,} checked"
             def update():
@@ -812,7 +812,7 @@ class Desk(QMainWindow):
                     self.operation_progress.setValue(info["scanned"])
             self.callbacks.put(update)
         def job():
-            worker = WorkerClient(0, library=True)
+            worker = WorkerClient(0, library=True, refresh_library=force)
             self.active_reader = worker
             if self.cancel_requested:
                 worker.cancel()
@@ -820,14 +820,15 @@ class Desk(QMainWindow):
                 return worker.receive(timeout=120, progress=report)
             finally:
                 worker.close()
-        self.task(job, self.library_loaded, can_cancel=True, retry=self.load_library)
+        self.task(job, self.library_loaded, can_cancel=True, retry=lambda: self.load_library(force=force))
 
     def library_loaded(self, reply):
         self.library_account_id = reply["account_id"]
         self.library = [Game(**game) for game in reply["games"]]
         self.account_label.setText("Synthetic data" if self.demo else f"Account ending {self.library_account_id[-4:]}")
         self.filter_games()
-        self.set_status(f"{len(self.library):,} games in your library")
+        source = "Saved library" if reply.get("cached") else "Steam library refreshed"
+        self.set_status(f"{source} · {len(self.library):,} games · Use Refresh library to check for changes")
 
     def set_library_filter(self, value):
         self.library_filter = value
