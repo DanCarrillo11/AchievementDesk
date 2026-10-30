@@ -1,28 +1,27 @@
-# Achievement Desk v0.8.1-preview
+# Achievement Desk v0.8.2-preview — Faster Steam library loading
 
-First public Windows x64 **preview** of Achievement Desk, a desktop workspace for browsing Steam games and reviewing achievement unlock/relock changes before applying them.
+This Windows x64 preview adds an **account-specific library cache**, so Achievement Desk does not rescan thousands of Steam App IDs on every launch.
 
-## Highlights
+## What's new
 
-- Browse accessible Steam games with search, A–Z filters, favorites, and recent games.
-- Review individual achievement changes and observe confirmed, rejected, partial, or unconfirmed results.
-- Explore Steam-reported achievement sets and completion information; missing and private data remain unconfirmed.
-- Updated trophy-and-sparkle application branding and a compact dark interface.
-- A demo with synthetic account data is available without signing into Steam.
+- **Remember discovered games:** after a successful first full scan, Achievement Desk saves each game's Steam App ID, name, installed status, and icon hash locally.
+- **Faster launches:** subsequent starts verify the current Steam account and load its saved game list instead of repeating the full catalog scan.
+- **Manual refresh:** choose **Library tools → Refresh library**, or press **Ctrl+R** on the library page, to check for newly acquired, removed, installed, or uninstalled games.
+- **Separate accounts:** each Steam account has its own snapshot, preventing one account's library from appearing under another.
+- **Safer storage:** snapshots are validated and written atomically. Invalid or damaged snapshots trigger rediscovery; failed refreshes do not overwrite the prior valid snapshot.
+- **No achievement changes:** the cache only stores display metadata. Ownership checks and achievement reads/writes still go through Steam.
 
 ## Downloads
 
-- **AchievementDesk-0.8.1-preview-Setup.exe** — per-user Windows installer.
-- **AchievementDesk-0.8.1-preview-Portable.zip** — portable build (extract before launching).
+- **AchievementDesk-0.8.2-preview-Setup.exe** — Windows per-user installer.
+- **AchievementDesk-0.8.2-preview-Portable.zip** — portable Windows x64 application; extract the complete folder before launching.
 
-The source code remains publicly available in this repository and GitHub's automatically generated source archives.
+The first launch still needs to scan the Steam game catalog. Steam must be running and signed in so the app can verify which account owns the saved library.
 
 ## Compatibility and safety
 
-This is an **early preview, not a stable release**. Windows x64 and a signed-in, online Steam desktop client are required for live account operations. The application does not ask for a Steam password or API key.
+This is an **early preview, not a stable release**. Windows x64 and an online, signed-in Steam desktop client are required for live account operations; no Steam password or API key is requested. A saved game listing is not proof that a game still belongs to the current account or that its achievements are editable.
 
-The repository documents automated tests, synthetic/offscreen interface checks, and one explicitly authorized real achievement relock. That evidence does not establish general compatibility with all games. Some achievements are server-controlled or protected and may reject edits. Achievement sets and trophies are managed by Steam, not by this application.
+The automated suite covers the account-scoped cache, corrupted snapshots, explicit refresh, and UI behavior, but it does not prove compatibility with every Steam game or test a full installer upgrade on your computer. The app is independent and unaffiliated with Valve.
 
-Changes are only sent after explicit review and confirmation. Local snapshots are references, **not** backups of achievement timestamps, trophy history, or game save data. Test with caution and understand the effects before applying changes.
-
-Achievement Desk is an independent project, unaffiliated with Valve. See the repository README, troubleshooting guide, license, and third-party notices for details.
+Achievement changes continue to require explicit review and confirmation. Some protected or server-controlled achievements may reject writes. Reference snapshots do not restore historical unlock dates, trophy history, or game saves.
