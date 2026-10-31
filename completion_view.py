@@ -117,8 +117,6 @@ class CompletionPage(QWidget):
         if not group or self.desk.busy or not self.desk.client:
             return
         keys = {a["key"] for a in group["achievements"]}
-        for row in self.desk.rows:
-            if row.key in keys and not row.unlocked and not unlock_restriction(self.desk.current_completion(), row.key):
-                self.desk.desired[row.key] = True
+        self.desk.prepare_keys({r.key for r in self.desk.rows if r.key in keys and not r.unlocked}, True)
         self.show_selected()
         self.desk.set_status("Set unlocks prepared. Review and apply to send changes to Steam.")

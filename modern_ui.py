@@ -15,9 +15,11 @@ from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QPainter, QKeySe
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QFrame, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QListWidget, QListWidgetItem, QStyledItemDelegate, QStyle, QToolButton,
     QMenu, QProgressBar, QScrollArea, QButtonGroup, QPushButton, QMessageBox, QDialog,
-    QDialogButtonBox, QCheckBox, QTextEdit, QFileDialog, QInputDialog, QComboBox, QTreeWidget, QTreeWidgetItem, QStackedWidget)
+    QDialogButtonBox, QCheckBox, QTextEdit, QFileDialog, QInputDialog, QComboBox, QTreeWidget, QTreeWidgetItem, QStackedWidget, QSplitter)
 
-from design import STYLE, AchievementRow, apply_dark_palette, icon, label, button
+from design import STYLE, AchievementRow, ElidedLabel, apply_dark_palette, icon, label, button, draw_match_text
+from achievement_details import AchievementDetails
+from experience import SORTS, explain_error
 from domain import Achievement, plan_changes
 from library import Game
 from transport import GameClient, WorkerClient
@@ -67,7 +69,8 @@ class GameDelegate(QStyledItemDelegate):
         painter.setPen(QColor("#f5f5f7" if selected else "#b6b6be"))
         painter.setFont(QFont("Segoe UI", 9))
         name = painter.fontMetrics().elidedText(game.name, Qt.TextElideMode.ElideRight, rect.width() - 66)
-        painter.drawText(rect.x() + 54, rect.y() + 22, name)
+        draw_match_text(painter, QRectF(rect.x() + 54, rect.y() + 7, rect.width() - 66, 20), name,
+                        index.data(Qt.ItemDataRole.UserRole + 2) or "")
         painter.setPen(QColor("#9999a5"))
         painter.setFont(QFont("Segoe UI", 8))
         evidence = index.data(Qt.ItemDataRole.UserRole + 1) or {}
@@ -84,6 +87,8 @@ class Desk(QMainWindow):
         self.demo, self.client, self.game = demo, None, None
         self.rows, self.desired, self.library = [], {}, []
         self.selected, self.cards, self.filtered = set(), {}, []
+        self.draft_history, self.detail_key = [], None
+        self.view_generation, self._restoring_view, self._restore_next_view = 0, False, False
         self._rendered_keys = None
         self.account_id = self.library_account_id = None
         self.busy, self.page = False, 0
@@ -109,7 +114,14 @@ class Desk(QMainWindow):
         self.setMinimumSize(1020, 760)
         apply_dark_palette(QApplication.instance())
         self.setStyleSheet(STYLE)
+        self.view_timer = QTimer(self)
+        self.view_timer.setSingleShot(True)
+        self.view_timer.setInterval(300)
+        self.view_timer.timeout.connect(self.save_current_view)
         self.build()
+        self.notice_timer = QTimer(self)
+        self.notice_timer.setSingleShot(True)
+        self.notice_timer.timeout.connect(self.notice_bar.hide)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.poll)
         self.timer.start(45)
@@ -122,6 +134,16 @@ class Desk(QMainWindow):
             shortcut = QShortcut(QKeySequence(sequence), self)
             shortcut.activated.connect(callback)
             self.extra_shortcuts.append(shortcut)
+        shortcut = QShortcut(QKeySequence("Ctrl+Z"), self)
+        shortcut.activated.connect(self.undo_shortcut)
+        self.extra_shortcuts.append(shortcut)
+        shortcut = QShortcut(QKeySequence("Alt+Return"), self)
+        shortcut.activated.connect(self.show_selected_details)
+        self.extra_shortcuts.append(shortcut)
+        shortcut = QShortcut(QKeySequence("Esc"), self.details_panel)
+        shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        shortcut.activated.connect(self.close_details)
+        self.extra_shortcuts.append(shortcut)
         self.render()
         if not hidden:
             QTimer.singleShot(100, self.load_library)
@@ -291,23 +313,27 @@ class Desk(QMainWindow):
         top.addWidget(self.favorite_button)
         top.addWidget(self.more_button)
         main.addLayout(top)
-        main.addSpacing(22)
+        main.addSpacing(12)
         hero = QWidget()
+        self.hero = hero
         hero.setObjectName("Hero")
         hero_layout = QHBoxLayout(hero)
-        hero_layout.setContentsMargins(24, 20, 24, 20)
-        hero_layout.setSpacing(22)
+        hero_layout.setContentsMargins(16, 12, 18, 12)
+        hero_layout.setSpacing(14)
+        self.hero_icon = label("")
+        self.hero_icon.setFixedSize(40, 40)
+        hero_layout.addWidget(self.hero_icon)
         hero_copy = QWidget()
         hero_copy.setObjectName("HeroCopy")
         hero_text = QVBoxLayout(hero_copy)
         hero_text.setContentsMargins(0, 0, 0, 0)
-        hero_text.setSpacing(8)
-        self.game_title = label("Your achievements", "Title", True)
+        hero_text.setSpacing(4)
+        self.game_title = ElidedLabel("Your achievements")
+        self.game_title.setObjectName("HeroTitle")
         hero_text.addWidget(self.game_title)
         self.caption = label("Choose a game from your library to get started.", "Subtitle")
         hero_text.addWidget(self.caption)
-        hero_text.addSpacing(5)
-        self.progress_text = label("No game selected", "Metric")
+        self.progress_text = label("No game selected", "Small")
         hero_text.addWidget(self.progress_text)
         self.progress = QProgressBar()
         self.progress.setTextVisible(False)
@@ -341,6 +367,11 @@ class Desk(QMainWindow):
         self.result_count = label("0", "Count")
         list_header.addWidget(self.result_count)
         list_header.addStretch()
+        self.undo_button = button("Undo", self.undo_draft)
+        self.undo_button.setIcon(icon("undo"))
+        self.undo_button.setToolTip("Undo the last pending edit · Ctrl+Z")
+        list_header.addWidget(self.undo_button)
+        self.details_action = self.action(self.selection_menu, "View details", self.show_selected_details)
         self.all_sets_button = button("All sets", self.clear_set_filter)
         self.all_sets_button.hide()
         list_header.addWidget(self.all_sets_button)
@@ -373,13 +404,14 @@ class Desk(QMainWindow):
         self.search.setPlaceholderText("Search achievements")
         self.search.addAction(icon("search"), QLineEdit.ActionPosition.LeadingPosition)
         self.search.setClearButtonEnabled(True)
+        self.search.setMaxLength(256)
         self.search.setMinimumWidth(180)
         self.search.setMaximumWidth(270)
         self.search.textChanged.connect(self.search_changed)
         tools.addWidget(self.search)
         self.sort_menu = QMenu(self)
         self.sort_group = QActionGroup(self)
-        for value in ("Steam order", "Name A–Z", "Name Z–A", "Newest unlocks", "Oldest unlocks", "Rarest first", "Most common first"):
+        for value in SORTS:
             action = self.action(self.sort_menu, value, lambda checked=False, v=value: self.set_sort(v), True)
             action.setChecked(value == self.achievement_sort)
             self.sort_group.addAction(action)
@@ -396,13 +428,23 @@ class Desk(QMainWindow):
         main.addWidget(self.operation_bar)
         self.operation_bar.hide()
         self.error_bar = QWidget()
-        error_layout = QHBoxLayout(self.error_bar)
+        error_layout = QVBoxLayout(self.error_bar)
         error_layout.setContentsMargins(0, 0, 0, 10)
+        error_top = QHBoxLayout()
         self.error_label = label("", "Small", True)
-        error_layout.addWidget(self.error_label, 1)
+        error_top.addWidget(self.error_label, 1)
         self.retry_button = button("Retry", self.retry)
-        error_layout.addWidget(self.retry_button)
-        error_layout.addWidget(button("Dismiss", self.error_bar.hide))
+        error_top.addWidget(self.retry_button)
+        self.error_details_button = button("Show details", self.toggle_error_details)
+        error_top.addWidget(self.error_details_button)
+        error_top.addWidget(button("Dismiss", self.error_bar.hide))
+        error_layout.addLayout(error_top)
+        self.error_details = QTextEdit()
+        self.error_details.setReadOnly(True)
+        self.error_details.setFixedHeight(80)
+        self.error_details.setAccessibleName("Technical error details")
+        error_layout.addWidget(self.error_details)
+        self.error_details.hide()
         main.addWidget(self.error_bar)
         self.error_bar.hide()
         self.scroll = QScrollArea()
@@ -421,8 +463,28 @@ class Desk(QMainWindow):
         self.rows_layout.setContentsMargins(0, 0, 7, 0)
         self.rows_layout.setSpacing(8)
         self.list_layout.addWidget(self.rows_panel)
+        self.empty_panel = QWidget()
+        empty_layout = QVBoxLayout(self.empty_panel)
+        empty_layout.setContentsMargins(24, 36, 24, 36)
+        self.empty_title = label("", "Metric", True)
+        self.empty_hint = label("", "Subtitle", True)
+        for widget in (self.empty_title, self.empty_hint):
+            widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            empty_layout.addWidget(widget)
+        self.clear_filters_button = button("Clear filters", self.clear_filters)
+        empty_layout.addWidget(self.clear_filters_button, 0, Qt.AlignmentFlag.AlignCenter)
+        self.list_layout.addWidget(self.empty_panel)
         self.scroll.setWidget(self.list_holder)
-        main.addWidget(self.scroll, 1)
+        self.scroll.verticalScrollBar().valueChanged.connect(self.schedule_view_save)
+        self.editor_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.editor_splitter.setChildrenCollapsible(False)
+        self.editor_splitter.addWidget(self.scroll)
+        self.details_panel = AchievementDetails(self.close_details, self.open_steam)
+        self.editor_splitter.addWidget(self.details_panel)
+        self.editor_splitter.setStretchFactor(0, 1)
+        self.editor_splitter.setStretchFactor(1, 0)
+        self.details_panel.hide()
+        main.addWidget(self.editor_splitter, 1)
         self.pagination = QWidget()
         pagination_layout = QHBoxLayout(self.pagination)
         pagination_layout.setContentsMargins(2, 10, 2, 0)
@@ -452,6 +514,16 @@ class Desk(QMainWindow):
         self.review_button = button("Review changes", self.review, True)
         pending_layout.addWidget(self.review_button)
         main.addWidget(self.pending_bar)
+        self.notice_bar = QWidget()
+        self.notice_bar.setObjectName("NoticeBar")
+        notice_layout = QHBoxLayout(self.notice_bar)
+        notice_layout.setContentsMargins(12, 7, 10, 7)
+        self.notice_label = label("", "Subtitle", True)
+        notice_layout.addWidget(self.notice_label, 1)
+        self.notice_action = button("View activity", self.open_history)
+        notice_layout.addWidget(self.notice_action)
+        main.addWidget(self.notice_bar)
+        self.notice_bar.hide()
         self.status = label("", "Small")
         self.status.setWordWrap(False)
         self.status.setMaximumHeight(20)
@@ -464,11 +536,159 @@ class Desk(QMainWindow):
         self.content_stack.addWidget(self.library_page)
         self.completion_page = CompletionPage(self)
         self.content_stack.addWidget(self.completion_page)
-        outer.addWidget(self.content_stack, 1)
+        content = QWidget()
+        content.setObjectName("Workspace")
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+        content_layout.addWidget(self.content_stack, 1)
+        feedback = QWidget()
+        feedback_layout = QVBoxLayout(feedback)
+        feedback_layout.setContentsMargins(32, 0, 32, 14)
+        feedback_layout.setSpacing(6)
+        for widget in (self.operation_bar, self.error_bar, self.notice_bar, self.status):
+            main.removeWidget(widget)
+            feedback_layout.addWidget(widget)
+        content_layout.addWidget(feedback)
+        outer.addWidget(content, 1)
 
     def set_status(self, text):
         self.status.setText(text)
         self.status.setToolTip(text)
+
+    def show_notice(self, text, activity=False):
+        self.notice_label.setText(text)
+        self.notice_action.setVisible(activity)
+        self.notice_bar.show()
+        self.notice_timer.start(6500)
+
+    def toggle_error_details(self):
+        visible = self.error_details.isHidden()
+        self.error_details.setVisible(visible)
+        self.error_details_button.setText("Hide details" if visible else "Show details")
+
+    def show_problem(self, detail, uncertain=False, retry=False, summary=None):
+        title, hint = explain_error(detail, uncertain)
+        self.error_label.setText(summary or (title + ". " + hint))
+        self.error_details.setPlainText(detail)
+        self.error_details.hide()
+        self.error_details_button.setText("Show details")
+        self.retry_button.setVisible(retry and not uncertain)
+        self.error_bar.show()
+        self.notice_bar.hide()
+
+    def show_details(self, key):
+        row = next((r for r in self.rows if r.key == key), None)
+        if row is None:
+            return
+        self.detail_key = key
+        self.details_panel.update_record(self.display_record(row), bool(self.account_id and not self.demo))
+        self.details_panel.show()
+        self.editor_splitter.setSizes([max(300, self.editor_splitter.width() - 290), 290])
+        self.details_panel.close_button.setFocus()
+
+    def show_selected_details(self):
+        key = next((r.key for r in self.rows if r.key in self.selected), None)
+        if key is not None:
+            self.show_details(key)
+
+    def close_details(self):
+        self.detail_key = None
+        self.details_panel.hide()
+
+    def view_state(self):
+        return dict(query=self.search.text(), filter=self.achievement_filter, sort=self.achievement_sort,
+                    page=self.page, scroll=self.scroll.verticalScrollBar().value())
+
+    def schedule_view_save(self, _=None):
+        if not self._restoring_view and not self.busy and self.game and self.account_id:
+            self.view_timer.start()
+
+    def save_current_view(self):
+        self.view_timer.stop()
+        if self._restoring_view or self.busy or not self.game or not self.account_id or not self.rows:
+            return
+        try:
+            self.workspace.save_game_view(self.account_id, self.game.app_id, self.view_state())
+        except OSError:
+            self.set_status("Your view could not be remembered. Check local data folder permissions.")
+
+    def restore_view(self, value):
+        self.view_generation += 1
+        generation = self.view_generation
+        self._restoring_view = True
+        self.search.blockSignals(True)
+        self.search.setText(value["query"])
+        self.search.blockSignals(False)
+        self.achievement_filter, self.achievement_sort = value["filter"], value["sort"]
+        self.filter_buttons[self.achievement_filter].setChecked(True)
+        for action in self.sort_group.actions():
+            action.setChecked(action.text() == self.achievement_sort)
+        self.page = value["page"]
+        self.render()
+        context = (self.account_id, self.game.app_id if self.game else None)
+        def scroll_back():
+            if generation != self.view_generation or context != (self.account_id, self.game.app_id if self.game else None):
+                return
+            self.scroll.verticalScrollBar().setValue(value["scroll"])
+            self._restoring_view = False
+        # Wait through the row layout request before restoring the scrollbar range.
+        QTimer.singleShot(0, self, lambda: QTimer.singleShot(0, self, scroll_back))
+
+    def clear_filters(self):
+        self.search.blockSignals(True)
+        self.search.clear()
+        self.search.blockSignals(False)
+        self.achievement_filter, self.achievement_set, self.page = "All", None, 0
+        self.filter_buttons["All"].setChecked(True)
+        self._restoring_view = False
+        self.view_generation += 1
+        self.render()
+        self.schedule_view_save()
+
+    def remember_draft(self, before):
+        if before == self.desired:
+            return
+        context = (self.account_id, self.game.app_id if self.game else None)
+        self.draft_history.append((context, dict(before)))
+        self.draft_history = self.draft_history[-100:]
+
+    def undo_shortcut(self):
+        focus = QApplication.focusWidget()
+        if isinstance(focus, (QLineEdit, QTextEdit)):
+            focus.undo()
+        else:
+            self.undo_draft()
+
+    def undo_draft(self):
+        if self.busy or not self.client or not self.game:
+            return
+        context = (self.account_id, self.game.app_id)
+        while self.draft_history:
+            owner, previous = self.draft_history.pop()
+            if owner != context:
+                continue
+            rows = {r.key: r for r in self.rows}
+            self.desired = {k: state for k, state in previous.items() if k in rows and state != rows[k].unlocked
+                            and not (state and not rows[k].unlocked and unlock_restriction(self.current_completion(), k))}
+            self.render()
+            self.show_notice("Last pending edit undone.")
+            return
+        self.sync_controls()
+
+    def prepare_keys(self, keys, state):
+        if self.busy or not self.client or type(state) is not bool:
+            return
+        before = dict(self.desired)
+        for row in self.rows:
+            if row.key not in keys or state and not row.unlocked and unlock_restriction(self.current_completion(), row.key):
+                continue
+            if row.unlocked == state:
+                self.desired.pop(row.key, None)
+            else:
+                self.desired[row.key] = state
+        self.remember_draft(before)
+        self.render()
 
     def profile(self):
         return self.workspace.profile(self.library_account_id or self.account_id)
@@ -521,6 +741,8 @@ class Desk(QMainWindow):
                 invalid = [k for k, state in self.desired.items() if state and unlock_restriction(value, k)]
                 for k in invalid:
                     self.desired.pop(k, None)
+                if invalid:
+                    self.draft_history.clear()
                 self.render()
                 if invalid:
                     self.set_status(f"Removed {len(invalid)} pending unlocks that Steam reports as restricted.")
@@ -536,7 +758,10 @@ class Desk(QMainWindow):
     def clear_set_filter(self):
         self.achievement_set = None
         self.page = 0
+        self._restoring_view = False
+        self.view_generation += 1
         self.render()
+        self.schedule_view_save()
 
     def persist_settings(self):
         try:
@@ -564,7 +789,7 @@ class Desk(QMainWindow):
         try:
             self.workspace.favorite(self.library_account_id or self.account_id, game.app_id)
         except OSError as exc:
-            self.set_status(f"Favorite could not be saved: {exc}")
+            self.show_problem(str(exc), summary="The favorite could not be saved. Check local data folder permissions.")
             return
         self.filter_games()
         self.sync_controls()
@@ -581,6 +806,8 @@ class Desk(QMainWindow):
             if pixmap.isNull():
                 return
             self.game_icon_pixmaps[app_id] = pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            if self.game and self.game.app_id == app_id:
+                self.hero_icon.setPixmap(self.game_icon_pixmaps[app_id])
             for index in range(self.games.count()):
                 item = self.games.item(index)
                 if item.data(Qt.ItemDataRole.UserRole).app_id == app_id:
@@ -666,7 +893,7 @@ class Desk(QMainWindow):
         dialog.deleteLater()
 
     def shortcuts(self):
-        QMessageBox.information(self, "Keyboard shortcuts", "Ctrl+B   Browse library\nCtrl+F   Search the current view\nCtrl+D   Favorite selected/current game\nCtrl+H   Activity history\nCtrl+R   Refresh the current view\nCtrl+Enter   Review pending changes\nEsc   Return from library to achievements\nTab / Space   Navigate / toggle switches\nCtrl+click   Select multiple achievement rows\nF1   Keyboard shortcuts")
+        QMessageBox.information(self, "Keyboard shortcuts", "Ctrl+B   Browse library\nCtrl+F   Search the current view\nCtrl+D   Favorite selected/current game\nCtrl+H   Activity history\nCtrl+R   Refresh the current view\nCtrl+Z   Undo the last pending edit (or typing in a text field)\nAlt+Enter   View selected achievement details\nCtrl+Enter   Review pending changes\nEsc   Return from library or close focused details\nTab / Space   Navigate / toggle switches\nCtrl+click   Select multiple achievement rows\nF1   Keyboard shortcuts")
 
     def set_sort(self, value):
         self.achievement_sort = value
@@ -675,7 +902,10 @@ class Desk(QMainWindow):
         for action in self.sort_group.actions():
             action.setChecked(action.text() == value)
         self.page = 0
+        self._restoring_view = False
+        self.view_generation += 1
         self.render()
+        self.schedule_view_save()
 
     def cancel_read(self):
         if not self.busy or not self.can_cancel:
@@ -712,6 +942,9 @@ class Desk(QMainWindow):
         self.selection_button.setVisible(bool(self.selected))
         self.selection_button.setText(f"{len(self.selected)} selected")
         self.selection_button.setEnabled(ready and not self.busy)
+        self.details_action.setEnabled(bool(self.selected and self.rows))
+        self.undo_button.setVisible(bool(self.draft_history))
+        self.undo_button.setEnabled(ready and bool(self.draft_history) and not self.busy)
         self.clear_button.setEnabled(bool(self.desired) and not self.busy)
         self.review_button.setEnabled(ready and bool(self.desired) and not self.busy)
         self.games.setEnabled(not self.busy)
@@ -737,6 +970,7 @@ class Desk(QMainWindow):
         self.cancel_requested, self.can_cancel = False, can_cancel and not uncertain
         self.retry_callback = retry
         self.error_bar.hide()
+        self.notice_bar.hide()
         self.operation_progress.setRange(0, 0)
         self.operation_bar.show()
         self.cancel_button.setVisible(self.can_cancel)
@@ -758,22 +992,21 @@ class Desk(QMainWindow):
                 if uncertain:
                     self.record_outcome(dict(status="unconfirmed", message=error))
                     self.desired.clear()
+                    self.draft_history.clear()
                     self.rows.clear()
                     if self.client:
                         self.client.close()
                         self.client = None
                     self.render()
                     error = "The outcome may be partial or unknown. Check Steam before retrying.\n\n" + error
-                self.set_status("Request failed. Open the game again to retry.")
-                self.error_label.setText(error)
-                self.retry_button.setVisible(bool(retry) and not uncertain)
-                self.error_bar.show()
+                self.set_status("Check Steam before retrying." if uncertain else "Request needs attention.")
+                self.show_problem(error, uncertain=uncertain, retry=bool(retry))
             else:
                 try:
                     success(value)
                 except Exception as exc:
                     self.set_status("Unable to display the result. Reload the game.")
-                    QMessageBox.warning(self, "Result unavailable", str(exc))
+                    self.show_problem(str(exc), uncertain=uncertain)
             self.sync_controls()
         def execute():
             try:
@@ -791,6 +1024,11 @@ class Desk(QMainWindow):
     def load_library(self, force=False):
         if self.busy or not self.discard_queue():
             return
+        self.save_current_view()
+        self.view_generation += 1
+        self._restoring_view = False
+        self.close_details()
+        self.draft_history.clear()
         if self.client:
             self.client.close()
         self.client = self.game = self.account_id = self.library_account_id = None
@@ -855,6 +1093,7 @@ class Desk(QMainWindow):
             item.setData(Qt.ItemDataRole.UserRole, game)
             evidence = self.game_compatibility(game.app_id)
             item.setData(Qt.ItemDataRole.UserRole + 1, evidence)
+            item.setData(Qt.ItemDataRole.UserRole + 2, self.game_search.text())
             if game.app_id in self.game_icon_pixmaps:
                 item.setData(Qt.ItemDataRole.DecorationRole, self.game_icon_pixmaps[game.app_id])
             item.setToolTip(f"{game.name}\nApp ID {game.app_id}\n{compatibility_details(evidence)}")
@@ -882,6 +1121,11 @@ class Desk(QMainWindow):
             return
         if not self.discard_queue():
             return
+        self.save_current_view()
+        self.view_generation += 1
+        self._restoring_view = False
+        self.close_details()
+        self.draft_history.clear()
         self.show_achievements()
         self.achievement_set = None
         self.desired.clear()
@@ -910,6 +1154,7 @@ class Desk(QMainWindow):
         def done(value):
             self.client, reply = value
             self.game, self.account_id = game, reply["account_id"]
+            self._restore_next_view = True
             try:
                 self.workspace.visit(self.account_id, game.app_id)
             except OSError:
@@ -917,7 +1162,7 @@ class Desk(QMainWindow):
             self.set_rows(reply)
             self.game_title.setText(game.name)
             self.caption.setText(f"Achievements · {'Installed' if game.installed else 'Not installed'}")
-            self.game_title.setToolTip(f"App ID {game.app_id}")
+            self.game_title.setToolTip(f"{game.name}\nApp ID {game.app_id}")
             self.filter_games()
             self.load_presentation()
             self.load_completion()
@@ -926,14 +1171,17 @@ class Desk(QMainWindow):
     def set_rows(self, reply):
         if reply["account_id"] != self.account_id:
             raise RuntimeError("Steam account changed. Refresh your library.")
+        view = (self.workspace.game_view(self.account_id, self.game.app_id) if self._restore_next_view and self.game
+                else self.view_state())
+        self._restore_next_view = False
         self.rows = [Achievement(**row) for row in reply["achievements"]]
         if self.game:
             self.save_compatibility(self.game.app_id, observe_read(self.game_compatibility(self.game.app_id), len(self.rows)))
             self.filter_games()
         self.desired.clear()
+        self.draft_history.clear()
         self.selected.clear()
-        self.page = 0
-        self.render()
+        self.restore_view(view)
         self.set_status("Demo data · Steam is not connected" if self.demo else "Up to date · Steam session closed")
 
     def failed_game_read(self, app_id):
@@ -946,11 +1194,17 @@ class Desk(QMainWindow):
         self.achievement_filter = value
         self.filter_buttons[value].setChecked(True)
         self.page = 0
+        self._restoring_view = False
+        self.view_generation += 1
         self.render()
+        self.schedule_view_save()
 
     def search_changed(self, _=None):
         self.page = 0
+        self._restoring_view = False
+        self.view_generation += 1
         self.render()
+        self.schedule_view_save()
 
     def set_reveal(self, checked):
         self.reveal_hidden = checked
@@ -1003,26 +1257,10 @@ class Desk(QMainWindow):
                     item.widget().deleteLater()
             self.cards = {}
             for record in page_records:
-                card = AchievementRow(record, self.toggle_achievement, self.select_row)
+                card = AchievementRow(record, self.toggle_achievement, self.select_row, self.show_details)
                 card.set_preferences(self.workspace.settings["compact"], self.workspace.settings["reduce_motion"])
                 self.cards[record["key"]] = card
                 self.rows_layout.addWidget(card)
-            if not keys:
-                empty = QWidget()
-                layout = QVBoxLayout(empty)
-                layout.setContentsMargins(30, 55, 30, 55)
-                glyph = QLabel()
-                glyph.setPixmap(icon("library", "#9999a5", 44).pixmap(44, 44))
-                glyph.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(glyph)
-                title = label("No achievements to display" if self.game else "Choose your next milestone", "Metric")
-                title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addSpacing(10)
-                layout.addWidget(title)
-                hint = label("Try another filter or search." if self.game else "Select a game from your library.", "Subtitle")
-                hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(hint)
-                self.rows_layout.addWidget(empty)
             self.scroll.verticalScrollBar().setValue(0)
         else:
             for record in page_records:
@@ -1032,6 +1270,22 @@ class Desk(QMainWindow):
         self.selected.intersection_update(valid_keys)
         for key, card in self.cards.items():
             card.set_selected(key in self.selected)
+            card.title.set_query(query)
+            card.description.set_query(query)
+        self.empty_panel.setVisible(not keys)
+        self.empty_title.setText("No matches found" if self.game and self.rows else
+                                 "No achievements to display" if self.game else "Choose your next milestone")
+        self.empty_hint.setText("Try another search, or clear filters to see all achievements." if self.game and self.rows else
+                                "Refresh achievements or choose another game." if self.game else "Select a game from your library.")
+        self.clear_filters_button.setVisible(bool(self.game and self.rows))
+        art = self.game_icon_pixmaps.get(self.game.app_id) if self.game else None
+        self.hero_icon.setPixmap(art if art and not art.isNull() else icon("library", "#93c5ff", 32).pixmap(32, 32))
+        if self.detail_key is not None:
+            row = next((r for r in self.rows if r.key == self.detail_key), None)
+            if row:
+                self.details_panel.update_record(self.display_record(row), bool(self.account_id and not self.demo and not self.busy))
+            else:
+                self.close_details()
         unlocked, total = sum(row.unlocked for row in self.rows), len(self.rows)
         self.progress_text.setText(f"{unlocked} of {total} unlocked" if total else "No game selected" if not self.game else "No achievements")
         self.percent.setText(f"{unlocked / total:.0%}" if total else "")
@@ -1058,7 +1312,10 @@ class Desk(QMainWindow):
 
     def turn_page(self, step):
         self.page = max(0, min(self.page + step, max(0, (len(self.filtered) - 1) // self.PAGE_SIZE)))
+        self._restoring_view = False
+        self.view_generation += 1
         self.render()
+        self.schedule_view_save()
 
     def select_row(self, key, extend=False):
         if extend:
@@ -1086,32 +1343,20 @@ class Desk(QMainWindow):
             self.render()
             self.set_status(unlock_restriction(self.current_completion(), key))
             return
-        if row.unlocked == state:
-            self.desired.pop(key, None)
-        else:
-            self.desired[key] = state
-        self.render()
+        self.prepare_keys({key}, state)
         self.set_status("Changes are pending review" if self.desired else "No pending changes")
 
     def queue_state(self, state):
-        if self.busy or not self.client:
-            return
-        for row in self.rows:
-            if row.key in self.selected:
-                if state and not row.unlocked and unlock_restriction(self.current_completion(), row.key):
-                    continue
-                if row.unlocked == state:
-                    self.desired.pop(row.key, None)
-                else:
-                    self.desired[row.key] = state
-        self.render()
+        self.prepare_keys(self.selected, state)
 
     def clear_queue(self):
         if self.busy:
             return
+        before = dict(self.desired)
         self.desired.clear()
+        self.remember_draft(before)
         self.render()
-        self.set_status("Pending changes discarded")
+        self.show_notice("Pending changes discarded. Undo is available above the list.")
 
     def refresh(self):
         if self.busy or not self.client or not self.discard_queue():
@@ -1174,6 +1419,7 @@ class Desk(QMainWindow):
                 QMessageBox.warning(dialog, "History unavailable", f"The local activity could not be recorded. No changes were sent.\n\n{exc}")
                 return
             dialog.accept()
+            self.draft_history.clear()
             request = dict(command="apply", account_id=self.account_id, changes=[asdict(change) for change in changes],
                 snapshot_folder=str(self.data_dir / ("demo-snapshots" if self.demo else "snapshots")))
             self.set_status("Applying reviewed changes…")
@@ -1191,6 +1437,7 @@ class Desk(QMainWindow):
         result = reply["result"]
         self.record_outcome(result)
         self.desired.clear()
+        self.draft_history.clear()
         if result["status"] == "unconfirmed":
             self.rows.clear()
             if self.client:
@@ -1202,7 +1449,13 @@ class Desk(QMainWindow):
         self.set_status(f"Result: {result['status']} · Steam session closed")
         self.load_completion(force=True)
         message = f"Confirmed: {len(result['confirmed'])}\nRejected: {len(result['rejected'])}\nUnconfirmed: {len(result['unconfirmed'])}\n\n{result['message']}\n\nReference snapshot:\n{result['snapshot']}"
-        QMessageBox.information(self, "Change result", message)
+        if result["status"] == "confirmed":
+            count = len(result["confirmed"])
+            self.show_notice(f"Saved {count} {'change' if count == 1 else 'changes'} to {'the demo' if self.demo else 'Steam'}.", activity=True)
+        else:
+            summary = (f"{len(result['confirmed'])} confirmed · {len(result['rejected'])} rejected · "
+                       f"{len(result['unconfirmed'])} unconfirmed. Check Steam before preparing another change.")
+            self.show_problem(message, uncertain=True, summary=summary)
 
     def record_outcome(self, result):
         if self.activity_id:
@@ -1215,9 +1468,7 @@ class Desk(QMainWindow):
                     self.save_compatibility(app_id, observe_result(evidence, result, entry.get("changes", [])))
                 self.filter_games()
             except OSError:
-                self.error_label.setText("The operation finished, but its history record could not be updated.")
-                self.retry_button.hide()
-                self.error_bar.show()
+                self.show_problem("The operation finished, but its history record could not be updated.")
             self.activity_id = None
 
     def refresh_catalog(self):
@@ -1260,7 +1511,7 @@ class Desk(QMainWindow):
                     achievements=[asdict(row) for row in self.rows], note="Reference only; does not restore dates or trophies."), ensure_ascii=False, indent=2), encoding="utf-8")
                 self.set_status("State exported")
             except OSError as exc:
-                QMessageBox.warning(self, "Export failed", str(exc))
+                self.show_problem(str(exc), summary="The export could not be saved. Choose a writable folder and try again.")
 
     def open_steam(self):
         if self.game and self.account_id and not self.demo:
@@ -1405,6 +1656,8 @@ class Desk(QMainWindow):
         if not self.discard_queue():
             event.ignore()
             return
+        self.save_current_view()
+        self.view_timer.stop()
         if self.client:
             self.client.close()
         self.workspace.settings.update(width=self.width(), height=self.height())

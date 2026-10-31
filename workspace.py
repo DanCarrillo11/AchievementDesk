@@ -4,8 +4,9 @@ import json
 import os
 from pathlib import Path
 import uuid
+from experience import clean_view
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 RELEASE_REPOSITORY = "DanCarrillo11/AchievementDesk"
 DEFAULTS = dict(reveal_hidden=False, compact=False, reduce_motion=False, online_art=True,
                 achievement_sort="Steam order", library_filter="All games", width=1280, height=900,
@@ -66,6 +67,22 @@ class Workspace:
         values.remove(app_id) if app_id in values else values.append(app_id)
         self.save()
         return app_id in values
+
+    def game_view(self, account, app_id):
+        views = self.profile(account).get("views", {})
+        value = views.get(str(app_id), dict(sort=self.settings["achievement_sort"])) if isinstance(views, dict) else {}
+        return clean_view(value)
+
+    def save_game_view(self, account, app_id, value):
+        if not account or type(app_id) is not int or not 0 <= app_id < 2**32:
+            return
+        profile = self.profile(account)
+        views = profile.get("views", {})
+        views = views if isinstance(views, dict) else {}
+        views.pop(str(app_id), None)
+        views[str(app_id)] = clean_view(value)
+        profile["views"] = dict(list(views.items())[-200:])
+        self.save()
 
     def compatibility(self, account, app_id):
         values = self.profile(account).get("compatibility", {})

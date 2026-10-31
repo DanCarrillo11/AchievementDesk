@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 — 2026-10-30
+
+- Compact game header with Steam's small list icon and more room for achievements.
+- Embedded read-only achievement details, Copy ID and Alt+Enter; hidden details remain concealed.
+- Undo for unsubmitted individual, batch, set and discarded drafts, with account/read/apply boundaries.
+- Persist search, filters, sort, page and scroll per account/game; retain ordinary text undo in search fields.
+- Highlight literal Unicode matches and recover empty results without losing drafts.
+- Use inline confirmation notices and concise errors with expandable details, visible in every main view.
+- Improve contrast, metadata wrapping and minimum-size layouts; verify upgrade from 1.0.0.
+
 ## 1.0.0 — 2026-10-30
 
 - Publish the first stable Windows release with installer and portable downloads.

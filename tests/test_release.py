@@ -88,7 +88,7 @@ class ReleaseGuards(unittest.TestCase):
         assets = [dict(name=n, size=(self.folder / n).stat().st_size, state="uploaded",
                        digest="sha256:" + release.digest(self.folder / n)) for n in names]
         responses = [None, None, [], dict(id=123, draft=True, target_commitish="b" * 40), dict(assets=assets),
-                     dict(draft=False, prerelease=False, html_url="https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.0.0")]
+                     dict(draft=False, prerelease=False, html_url="https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v" + release.VERSION)]
         with self.environment(), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=responses), patch.object(release, "gh") as gh, patch("builtins.print"):
             release.publish(self.folder)
         edit = next(c.args for c in gh.call_args_list if c.args[:2] == ("release", "edit"))
@@ -108,7 +108,7 @@ class ReleaseGuards(unittest.TestCase):
         self.assertFalse(any(c.args[:2] == ("release", "edit") for c in gh.call_args_list))
 
     def test_pending_draft_is_reused_without_a_tag_lookup_after_creation(self):
-        draft = dict(id=123, tag_name="v1.0.0", draft=True, target_commitish="b" * 40, assets=[])
+        draft = dict(id=123, tag_name="v" + release.VERSION, draft=True, target_commitish="b" * 40, assets=[])
         with self.environment(), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [draft], dict(assets=[])]) as api, patch.object(release, "gh"):
             with self.assertRaisesRegex(RuntimeError, "intended release assets"):
                 release.publish(self.folder)

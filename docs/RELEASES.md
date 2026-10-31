@@ -8,11 +8,11 @@ and `release-request.json` versions must agree.
 
 The **Tests** workflow runs synthetic/offscreen checks on Windows with Python
 3.11 and 3.14. **Build Windows release** also runs on pull requests, builds the
-frozen application, exercises its synthetic helper and offscreen interface, and
+frozen application, exercises its synthetic helper and offscreen interface (including embedded details, search and minimum-size layouts), and
 compiles the installer with the runner's Inno Setup console compiler.
 
 On the disposable Windows runner it silently installs the checksum-pinned
-0.8.2-preview, upgrades to the candidate, verifies startup and retained synthetic
+1.0.0, upgrades to the candidate, verifies startup and retained synthetic
 local data, uninstalls, and then checks a clean install/uninstall. No native
 Steam session is used. Installer checks refuse to run outside Windows Actions.
 
@@ -25,7 +25,7 @@ python -m PyInstaller --clean --noconfirm AchievementDesk.spec
 python tools/verify_packaged.py dist/AchievementDesk
 python tools/package_release.py dist/AchievementDesk release
 $releaseRoot = (Resolve-Path release).Path
-$portableFolder = Join-Path $releaseRoot 'AchievementDesk-1.0.0-Portable'
+$portableFolder = Join-Path $releaseRoot 'AchievementDesk-1.1.0-Portable'
 ISCC.exe "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
 python tools/publish_release.py checksums release
 ```

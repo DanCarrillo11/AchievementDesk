@@ -53,15 +53,15 @@ jobs:
           $source = Join-Path $output ("AchievementDesk-" + $env:APP_VERSION + "-Portable")
           & $compiler "/DBuildSource=$source" "/DOutputFolder=$output" installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
-      - name: Verify clean installation and upgrade from the previous preview
+      - name: Verify clean installation and upgrade from the previous stable release
         shell: pwsh
         env:
           APP_VERSION: ${{ steps.release.outputs.version }}
         run: |
           New-Item -ItemType Directory -Force .ci-artifacts | Out-Null
           $previous = Join-Path (Resolve-Path .ci-artifacts).Path 'previous-Setup.exe'
-          Invoke-WebRequest 'https://github.com/DanCarrillo11/AchievementDesk/releases/download/v0.8.2-preview/AchievementDesk-0.8.2-preview-Setup.exe' -OutFile $previous
-          $expected = '285d2b71061f42aaea4be8d5e4b3a38986c15931b4e690e06ace934088bec03d'
+          Invoke-WebRequest 'https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.0.0/AchievementDesk-1.0.0-Setup.exe' -OutFile $previous
+          $expected = 'f2cbdf3b8cd10898e3409d9c1d17a9757b47496de71d77a0e88a452c6d38e0d9'
           if ((Get-FileHash -LiteralPath $previous -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Previous installer checksum mismatch.' }
           python tools/verify_packaged.py "release/AchievementDesk-$env:APP_VERSION-Portable" --installer "release/AchievementDesk-$env:APP_VERSION-Setup.exe" --previous-installer $previous
           if ($LASTEXITCODE -ne 0) { throw 'Packaged installation checks failed.' }
