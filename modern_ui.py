@@ -1341,10 +1341,10 @@ class Desk(QMainWindow):
         self.achievements_heading.setText("Achievements" + (" · " + group["name"] if group else ""))
         self.achievements_heading.setMaximumWidth(300)
         self.all_sets_button.setVisible(bool(group))
-        evidence = self.game_compatibility(self.game.app_id) if self.game else {}
-        self.compatibility_button.setText(compatibility_status(evidence)[0])
+        evidence = self.game_compatibility(displayed_game.app_id) if displayed_game else {}
+        self.compatibility_button.setText("Checking achievements…" if loading and not self.rows else compatibility_status(evidence)[0])
         self.compatibility_button.setToolTip(compatibility_details(evidence))
-        groups = self.current_completion().get("groups", [])
+        groups = [] if loading and not self.rows else self.current_completion().get("groups", [])
         completed = sum(g["completed"] is True for g in groups)
         unknown = sum(g["completed"] is None for g in groups)
         self.sets_button.setText((f"Sets & trophies · {len(groups)} sets" if unknown == len(groups) else f"Sets & trophies · {completed} completed") if groups else "Sets & trophies")

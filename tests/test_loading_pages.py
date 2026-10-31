@@ -77,6 +77,7 @@ class LoadingAndPagesTests(unittest.TestCase):
         self.assertEqual(self.window.empty_title.text(), "Loading achievements…")
         self.assertFalse(self.window.empty_loading.isHidden())
         self.assertEqual(self.window.result_count.text(), "…")
+        self.assertEqual(self.window.compatibility_button.text(), "Checking achievements…")
         self.assertEqual(self.window.game_title.text(), "Selected game")
         self.assertNotIn("No achievements", self.window.progress_text.text())
         gate.set(); self.finish()
