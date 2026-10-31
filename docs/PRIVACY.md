@@ -9,12 +9,15 @@ Real-account data is stored in `%LOCALAPPDATA%\AchievementDesk`:
 
 | Path | Contents |
 | --- | --- |
-| `workspace.json` | Preferences and per-account favorites, recent games and compatibility evidence |
+| `workspace.json` | Preferences, per-account favorites/recent games, compatibility evidence and per-game view settings |
 | `history/` | Requested operations and confirmed, partial, rejected or unknown outcomes |
 | `snapshots/` | Account/game identifiers, achievement states and requested changes before writes |
+| `library-cache/` | Account-specific game IDs, names, installed flags and icon hashes |
 | `public-cache/` | Optional cached Steam artwork and public presentation metadata |
 
-The detected library is kept in memory. Account completion responses are held in
+The detected library is cached locally per account after verification. Per-game
+views include search text, filter, sort, page and scroll position for up to 200
+recent game views. Draft changes and undo history are held only in memory. Account completion responses are held in
 memory. Demo mode uses a separate temporary workspace. Local reference snapshots
 are evidence rather than reversible backups.
 

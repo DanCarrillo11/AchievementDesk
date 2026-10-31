@@ -1,50 +1,48 @@
-# Achievement Desk 1.0.0
+# Achievement Desk 1.1.0 — A clearer workspace
 
-The first stable Windows x64 release of Achievement Desk: a focused desktop
-workspace for managing Steam achievements with reviewed changes and clear results.
+This stable update improves everyday browsing, reviewing and navigating while
+retaining the dark interface and explicit approval before Steam changes.
 
-## Included
+## What's new
 
-- Embedded A–Z game library with search, 100-game pages and Steam list icons.
-- Account-specific saved libraries, favorites and recent games.
-- Achievement switches, filters, sorting and an explicit before/after review.
-- Confirmed, rejected, partial and unconfirmed results with local activity history.
-- Achievement sets and Steam-reported completion, with eligible set unlock drafts.
-- Dark interface, compact rows, keyboard shortcuts and remembered preferences.
-
-## Stable release improvements
-
-- The official update repository is configured automatically, including migration
-  from empty preview settings. Stable builds ignore preview updates.
-- Artwork parsing uses structured API-name associations and supports missing image
-  variants without mixing achievements. Corrupt images are replaced, failed
-  requests can retry, and valid cached data survives temporary Steam failures.
-- The release build checks frozen startup and the synthetic worker, clean setup,
-  upgrade from 0.8.2-preview, local-data retention and uninstallation before upload.
-- The two downloads are verified in a draft before publication; SHA-256 hashes
-  are included below. No Steam account is used by automated publication tests.
+- **Compact game header:** Steam list icon, game name and progress use less space.
+- **Embedded achievement details:** open a row's information button, double-click
+  it or use Alt+Enter to see full descriptions, artwork, rarity, dates and Copy ID.
+- **Undo pending edits:** Undo or Ctrl+Z restores individual edits, selected
+  batches, set preparations and discarded drafts before submission. Search fields
+  retain their normal text undo. Read/apply/account/game boundaries clear history.
+- **Remember your place:** search, filter, sort, page and scroll position restore
+  separately per game/account after a verified read. Drafts are not saved.
+- **Literal search highlights:** matching text is highlighted in games and
+  achievement titles/descriptions; Clear filters recovers empty results.
+- **Quieter feedback:** confirmed saves use brief inline notices. Errors and
+  uncertain results keep clear explanations, with technical details on demand.
+  Progress and errors also remain visible in the library view.
+- **Visual polish:** stronger secondary-text contrast, consistent small controls,
+  wrapped metadata and layouts verified at 1020 × 760 with the details panel open.
 
 ## Downloads and upgrading
 
-- **AchievementDesk-1.0.0-Setup.exe** — per-user Windows installer.
-- **AchievementDesk-1.0.0-Portable.zip** — extract the complete folder and run
+- **AchievementDesk-1.1.0-Setup.exe** — per-user Windows x64 installer.
+- **AchievementDesk-1.1.0-Portable.zip** — extract the complete folder and start
   AchievementDesk.exe; keep its helper and `_internal` folder together.
 
-Python is not required. Steam must be running, signed in and online for live
-operations. Games do not need to be installed. Close Achievement Desk before
-running setup over an existing installation. Extract portable updates into a new
-folder. Preferences, favorites, history and library cache remain in the same
-local data folder and are retained on uninstall.
+Close Achievement Desk before running setup over the existing installation.
+Extract portable updates into a new folder. Existing preferences, favorites,
+library cache, activity and reference snapshots remain in the same local data
+folder. Python is not required. Live Steam operations require the signed-in
+desktop client to be online; games need not be installed.
 
-## Compatibility
+## Verification and compatibility
 
-The owner reports successful use with their tested games. Compatibility remains
-specific to the game and achievement: protected or server-controlled achievements
-can reject changes. Steam controls completion trophies and their persistence;
-relocking does not guarantee trophy removal. Missing/private completion remains
-Unconfirmed. Reference snapshots cannot restore old unlock dates, trophies or
-game saves. Steam client updates may affect the native interfaces.
+Automated checks cover undo boundaries, hidden detail privacy, account-scoped
+view restoration, literal highlighting, nonblocking results and small-window
+layouts. Publication also verifies the frozen interface/helper, a clean setup,
+upgrade from the checksum-pinned 1.0.0 installer, retained local data and uninstall.
+Screenshots use actual app widgets/public artwork with synthetic account states.
 
-No password or API key is requested. This independent app is not affiliated with
-Valve or Steam Achievement Manager. Binaries are not code-signed. See the user
-guide and stable release scope in the repository for details.
+Steam continues to control protected achievements and completion trophies. Undo
+edits only unsubmitted drafts; it cannot reverse saved Steam changes, restore old
+unlock dates or remove trophy history. Missing/private completion stays
+Unconfirmed. Binaries are unsigned. Achievement Desk is independent of Valve and
+Steam Achievement Manager.

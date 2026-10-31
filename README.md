@@ -18,11 +18,11 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**1.0.0** is the first stable release for Windows x64.
+**1.1.0** is the current stable release for Windows x64.
 
-- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.0.0/AchievementDesk-1.0.0-Setup.exe)
-- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.0.0/AchievementDesk-1.0.0-Portable.zip)
-- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.0.0)
+- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.1.0/AchievementDesk-1.1.0-Setup.exe)
+- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.1.0/AchievementDesk-1.1.0-Portable.zip)
+- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.1.0)
 
 The downloads include the runtime; Python is only needed for development.
 Live operations require an online, signed-in Steam desktop client. No Steam
@@ -37,6 +37,12 @@ password or API key is requested.
   account-specific snapshot loads on later launches once the signed-in Steam
   account is verified. Use **Library tools → Refresh library** or **Ctrl+R** on
   the library page to check for newly added, removed or installed games.
+- **Pick up where you left off.** Remember each game's search, filter, sort,
+  page and scroll position separately for each account.
+- **More room for achievements.** A compact game header and embedded details
+  panel keep full descriptions, rarity and copyable IDs within the workspace.
+- **Undo pending edits.** Undo a switch, a selection batch, a set preparation or
+  discarded drafts before submission. Ctrl+Z still edits text in search fields.
 - **Clear achievement switches.** Prepare unlocks or relocks, search and filter
   the full list, and review every change before applying it to Steam.
 - **Achievement sets and trophies.** Read Steam's reported set completion, filter
@@ -49,7 +55,11 @@ password or API key is requested.
   writes. Confirmed, rejected, partial and unknown outcomes remain separate.
 
 <details>
-  <summary>Library and achievement-set views</summary>
+  <summary>Details, search, library and achievement-set views</summary>
+
+![Embedded achievement details](docs/screenshots/details.png)
+
+![Literal search highlights](docs/screenshots/search.png)
 
 ![Embedded alphabetical library](docs/screenshots/library.png)
 
@@ -70,7 +80,7 @@ Keep the portable application's helper and `_internal` folder beside its main
 executable. The library is remembered per account; use **Library tools → Refresh
 library** after acquiring games or changing installations.
 
-**Upgrading from a preview:** close Achievement Desk and run the new setup over
+**Upgrading from an earlier version:** close Achievement Desk and run the new setup over
 the existing installation. For the portable version, extract into a new folder.
 Preferences, favorites, library snapshots and history stay in the same local data
 folder. An empty update channel from older builds automatically uses this repository.
@@ -98,13 +108,13 @@ achievement helper is connected; the manager does not launch the game executable
 Automated Windows checks cover drafts, reviewed writes, account isolation,
 partial/unknown outcomes, library caching, artwork recovery and update selection.
 The release workflow also checks the frozen helper and offscreen interface,
-clean installation, upgrade from 0.8.2-preview, retained local data and uninstall
+clean installation, upgrade from 1.0.0, retained local data and uninstall
 before publication. These synthetic checks do not modify a Steam account.
 
 The owner reports successful use with their tested games. One independently
 recorded real relock was acknowledged by Steam and confirmed in a fresh process,
 with the other achievement states unchanged. See the [verification report](docs/validation/relock-2026-10-30.md)
-and [1.0 release scope](docs/validation/stable-1.0.0.md). Compatibility is recorded
+and [1.1 usability validation](docs/validation/experience-1.1.0.md). Compatibility is recorded
 per game and account; no universal compatibility or Valve approval is claimed.
 
 ## Development

@@ -1,6 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "prerelease": false,
-  "notes_file": "RELEASE_NOTES.md",
-  "discard_empty_draft_from": "50399229ef8fc28b37cf9d2a7b5bd95d2e8fd495"
+  "notes_file": "RELEASE_NOTES.md"
 }

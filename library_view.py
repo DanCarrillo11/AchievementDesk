@@ -8,7 +8,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QKeySequence, QShortcut
 from PySide6.QtWidgets import (QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QComboBox, QListWidget,
     QListWidgetItem, QStyledItemDelegate, QStyle, QPushButton, QTreeWidget, QTreeWidgetItem,
     QTextEdit, QFileDialog, QButtonGroup)
-from design import label, button, icon
+from design import label, button, icon, draw_match_text
 from compatibility import FILTERS as COMPATIBILITY_FILTERS, status as compatibility_status, details as compatibility_details
 
 
@@ -57,7 +57,8 @@ class GameRowDelegate(QStyledItemDelegate):
         painter.setFont(QFont("Segoe UI", 10))
         painter.setPen(QColor("#f5f5f7" if selected else "#b6b6be"))
         name = painter.fontMetrics().elidedText(game.name, Qt.TextElideMode.ElideRight, max(10, available))
-        painter.drawText(QRectF(rect.x() + 44, rect.y(), available, rect.height()), Qt.AlignmentFlag.AlignVCenter, name)
+        draw_match_text(painter, QRectF(rect.x() + 44, rect.y(), available, rect.height()), name,
+                        index.data(Qt.ItemDataRole.UserRole + 2) or "")
         if favorite:
             painter.drawPixmap(int(rect.right() - 20), int(rect.center().y() - 7), icon("star_filled", "#93c5ff").pixmap(14, 14))
         evidence = index.data(Qt.ItemDataRole.UserRole + 1) or {}
@@ -228,6 +229,7 @@ class LibraryPage(QWidget):
             item.setData(Qt.ItemDataRole.UserRole, game)
             evidence = self.desk.game_compatibility(game.app_id)
             item.setData(Qt.ItemDataRole.UserRole + 1, evidence)
+            item.setData(Qt.ItemDataRole.UserRole + 2, self.search.text())
             item.setData(Qt.ItemDataRole.AccessibleDescriptionRole, compatibility_details(evidence))
             item.setToolTip(f"{game.name}\nApp ID {game.app_id} · {'Installed' if game.installed else 'Not installed'}\n{compatibility_details(evidence)}")
             self.games.addItem(item)

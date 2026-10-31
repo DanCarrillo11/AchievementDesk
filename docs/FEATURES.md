@@ -3,7 +3,7 @@
 A Windows desktop application for reading and managing Steam achievements through
 your locally signed-in Steam client. Interface and documentation are in English.
 
-**Version: 1.0.0.** Not affiliated with Valve. This is an independent
+**Version: 1.1.0.** Not affiliated with Valve. This is an independent
 Python implementation, with a Steam adapter adapted from SAM.API's interface
 layouts and connection approach. See THIRD_PARTY_NOTICES.txt.
 
@@ -33,7 +33,7 @@ and achievement states. This is not a screenshot of anyone's Steam account.*
 
 ## Optional installation
 
-Run **AchievementDesk-1.0.0-Setup.exe** to install for the current Windows
+Run **AchievementDesk-1.1.0-Setup.exe** to install for the current Windows
 user, with a Start menu shortcut and optional desktop shortcut. Administrator
 access is not required. The app does not open automatically after installation
 unless you select that option. Uninstalling retains local preferences and history.
@@ -102,6 +102,34 @@ Tab and Space can also be used to operate the achievement switches.
 Hidden achievement names and descriptions stay concealed unless **Show hidden
 achievement details** is enabled in Settings, including in the review dialog.
 
+### Workspace improvements in 1.1
+
+The compact header shows the selected game's small Steam icon, name and progress,
+leaving more space for achievement rows. Each row's information button, a double
+click or **Alt+Enter** on a selected row opens a read-only details panel inside
+the editor. It shows the full description, larger image, saved/pending state,
+date when supplied, rarity and a copyable API ID. Hidden details and IDs stay
+concealed until enabled in Settings. Close the panel with its × button, or Esc
+while focus is inside it.
+
+**Undo** above the list and **Ctrl+Z** restore the previous pending edit. One
+selection batch or set preparation is one undo step. Discarded drafts can also
+be undone. Undo never submits a Steam operation and is cleared on a fresh read,
+account/game switch or apply. Steam restrictions are checked again when restoring
+drafts. In a text field, Ctrl+Z undoes typing instead.
+
+Search matches are highlighted literally in titles/descriptions and game lists,
+including Unicode text; game text is not interpreted as HTML. An empty filtered
+result offers **Clear filters**, preserving the pending review queue.
+
+The last search, filter, sort, page and scroll offset are stored per account and
+game (up to 200 recent game views). They restore after the account is verified
+and achievements are read. Draft changes and undo history are not persisted.
+Successful saves use a brief inline notice with **View activity**. Partial,
+rejected or uncertain outcomes remain visible with counts and require attention.
+Technical messages are under **Show details**; status/progress and errors remain
+visible while browsing the library too.
+
 ### Artwork, preferences and history
 
 Images are loaded only for visible games and achievement pages, with four
@@ -158,6 +186,8 @@ See [Release instructions](RELEASES.md).
 | Ctrl+H | Activity history |
 | Ctrl+R | Refresh current view |
 | Ctrl+Enter | Review pending changes |
+| Ctrl+Z | Undo pending edit, or typing in a text field |
+| Alt+Enter | Open selected achievement details |
 | Tab / Space | Navigate / toggle switches |
 | Ctrl+click | Select multiple achievements |
 | F1 | Show shortcut help |

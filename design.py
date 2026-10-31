@@ -1,8 +1,9 @@
 """Dark companion design for UniversalSaveEditor, with locally painted controls."""
 import math
 from PySide6.QtCore import Qt, QSize, QRectF, QPointF, QPropertyAnimation, Property
-from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QPixmap, QPalette, QPolygonF
-from PySide6.QtWidgets import QAbstractButton, QApplication, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QPixmap, QPalette, QPolygonF, QTextLayout, QTextCharFormat, QTextOption
+from PySide6.QtWidgets import QAbstractButton, QApplication, QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QToolButton, QSizePolicy
+from experience import match_ranges
 
 STYLE = """
 QWidget { font-family: 'Segoe UI'; font-size: 13px; color: #f5f5f7; }
@@ -18,9 +19,10 @@ QLabel#LibraryTitle { font-size: 23px; font-weight: 600; letter-spacing: -0.4px;
 QLabel#Eyebrow { color: #9999a5; font-size: 11px; font-weight: 600; }
 QLabel#Title { font-size: 27px; font-weight: 600; letter-spacing: -0.5px; }
 QLabel#Subtitle { color: #b6b6be; font-size: 12px; }
-QLabel#Small { color: #9999a5; font-size: 11px; }
+QLabel#Small { color: #acacb7; font-size: 11px; }
+QLabel#HeroTitle { font-size: 22px; font-weight: 600; }
 QLabel#Metric { font-size: 14px; font-weight: 600; }
-QLabel#Percent { color: #93c5ff; font-size: 34px; font-weight: 400; }
+QLabel#Percent { color: #93c5ff; font-size: 28px; font-weight: 400; }
 QLabel#SectionTitle { font-size: 17px; font-weight: 600; }
 QLabel#Count { color: #b6b6be; background: #303034; border-radius: 6px; padding: 3px 8px; font-size: 11px; }
 QLabel#Avatar { background: #193856; color: #93c5ff; border-radius: 8px; font-weight: 600; }
@@ -61,8 +63,16 @@ QFrame#AchievementRow[selected="true"] { background: #193856; border: 1px solid 
 QFrame#AchievementRow[pending="true"] { border-left: 3px solid #93c5ff; }
 QLabel#AchievementName { font-size: 14px; font-weight: 600; }
 QLabel#AchievementDescription { color: #b6b6be; font-size: 12px; }
-QLabel#AchievementMeta { color: #9999a5; font-size: 10px; }
-QLabel#Pending { color: #93c5ff; font-size: 10px; }
+QLabel#AchievementMeta { color: #acacb7; font-size: 11px; }
+QLabel#Pending { color: #93c5ff; font-size: 11px; }
+QFrame#AchievementDetails { background: #242426; border: 1px solid #3a3a3f; border-radius: 12px; }
+QWidget#DetailsBody { background: #242426; }
+QLabel#DetailState { color: #93c5ff; font-size: 12px; }
+QPushButton#IconButton, QToolButton#IconButton { padding: 4px; border-radius: 7px; background: transparent; border: 1px solid transparent; }
+QPushButton#IconButton:hover, QToolButton#IconButton:hover { background: #353538; border-color: #55555d; }
+QWidget#NoticeBar { background: #193856; border: 1px solid #25486a; border-radius: 9px; }
+QSplitter::handle { background: transparent; width: 10px; }
+QSplitter::handle:hover { background: #303034; }
 QWidget#PendingBar { background: #242426; border: 1px solid #3a3a3f; border-radius: 16px; }
 QMenu { background: #242426; border: 1px solid #3a3a3f; padding: 7px; border-radius: 10px; }
 QMenu::item { padding: 9px 30px 9px 12px; border-radius: 3px; }
@@ -99,15 +109,89 @@ def apply_dark_palette(app):
     app.setPalette(palette)
 
 
+def draw_match_text(painter, rect, text, query, wrap=False):
+    """Paint plain text with literal highlights; game text is never HTML."""
+    layout = QTextLayout(text, painter.font())
+    option = QTextOption()
+    option.setWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere if wrap else QTextOption.WrapMode.NoWrap)
+    layout.setTextOption(option)
+    formats = []
+    for start, end in match_ranges(text, query):
+        item = QTextLayout.FormatRange()
+        item.start = len(text[:start].encode("utf-16-le")) // 2
+        item.length = len(text[start:end].encode("utf-16-le")) // 2
+        item.format = QTextCharFormat()
+        item.format.setBackground(QColor("#36516b"))
+        item.format.setForeground(QColor("#e8f3ff"))
+        formats.append(item)
+    layout.setFormats(formats)
+    layout.beginLayout()
+    height = 0
+    while True:
+        line = layout.createLine()
+        if not line.isValid():
+            break
+        line.setLineWidth(max(1, rect.width()))
+        line.setPosition(QPointF(0, height))
+        height += line.height()
+    layout.endLayout()
+    painter.save()
+    painter.setClipRect(rect)
+    layout.draw(painter, QPointF(rect.x(), rect.y() + max(0, (rect.height() - height) / 2)))
+    painter.restore()
+
+
+class MatchLabel(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.query = ""
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+
+    def set_query(self, query):
+        self.query = query
+        self.update()
+
+    def paintEvent(self, event):
+        if not self.query or not match_ranges(self.text(), self.query):
+            return super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setPen(self.palette().color(self.foregroundRole()))
+        draw_match_text(painter, QRectF(self.contentsRect()), self.text(), self.query, self.wordWrap())
+
+
+class ElidedLabel(QLabel):
+    def __init__(self, text=""):
+        super().__init__(text)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setPen(self.palette().color(self.foregroundRole()))
+        text = self.fontMetrics().elidedText(self.text(), Qt.TextElideMode.ElideRight, self.contentsRect().width())
+        painter.drawText(self.contentsRect(), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, text)
+
+
 def icon(kind, color="#9ba5b4", size=20):
     pix = QPixmap(size * 2, size * 2)
     pix.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pix)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    painter.scale(2, 2)
+    painter.scale(size / 10, size / 10)
     painter.setPen(QPen(QColor(color), 1.6, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
     painter.setBrush(Qt.BrushStyle.NoBrush)
-    if kind == "search":
+    if kind == "info":
+        painter.drawEllipse(QRectF(2, 2, 16, 16))
+        painter.drawPoint(10, 6)
+        painter.drawLine(10, 9, 10, 14)
+    elif kind == "undo":
+        painter.drawLine(3, 7, 7, 3)
+        painter.drawLine(3, 7, 7, 11)
+        painter.drawLine(3, 7, 12, 7)
+        painter.drawArc(QRectF(8, 7, 8, 8), -90 * 16, 180 * 16)
+    elif kind == "lock":
+        painter.drawRoundedRect(QRectF(4, 9, 12, 9), 2, 2)
+        painter.drawArc(QRectF(6, 2, 8, 12), 0, 180 * 16)
+    elif kind == "search":
         painter.drawEllipse(QRectF(3, 3, 9, 9))
         painter.drawLine(11, 11, 16, 16)
     elif kind == "settings":
@@ -240,12 +324,13 @@ class Switch(QAbstractButton):
 
 
 class AchievementRow(QFrame):
-    def __init__(self, record, on_toggle, on_select):
+    def __init__(self, record, on_toggle, on_select, on_details=None):
         super().__init__()
         self.setObjectName("AchievementRow")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._surface = None
         self.key, self.on_select = record["key"], on_select
+        self.on_details = on_details
         self.setProperty("selected", False)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(17, 15, 20, 15)
@@ -254,19 +339,30 @@ class AchievementRow(QFrame):
         layout.addWidget(self.mark, 0, Qt.AlignmentFlag.AlignVCenter)
         text = QVBoxLayout()
         text.setSpacing(5)
-        self.title = QLabel()
+        self.title = MatchLabel()
         self.title.setObjectName("AchievementName")
         self.title.setWordWrap(True)
-        self.description = QLabel()
+        self.description = MatchLabel()
         self.description.setObjectName("AchievementDescription")
         self.description.setWordWrap(True)
         self.meta = QLabel()
         self.meta.setObjectName("AchievementMeta")
+        self.meta.setWordWrap(True)
+        self.meta.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         for label in (self.title, self.description, self.meta):
             label.setTextFormat(Qt.TextFormat.PlainText)
             label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             text.addWidget(label)
         layout.addLayout(text, 1)
+        self.details_button = QToolButton()
+        self.details_button.setObjectName("IconButton")
+        self.details_button.setFixedSize(28, 28)
+        self.details_button.setIcon(icon("info", size=17))
+        self.details_button.setAccessibleName("View achievement details")
+        self.details_button.setToolTip("View details · double-click a row")
+        self.details_button.clicked.connect(lambda: self.on_details(self.key) if self.on_details else None)
+        self.details_button.setVisible(on_details is not None)
+        layout.addWidget(self.details_button, 0, Qt.AlignmentFlag.AlignVCenter)
         self.switch = Switch()
         self.switch.clicked.connect(lambda value: on_toggle(self.key, value))
         layout.addWidget(self.switch, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -338,6 +434,11 @@ class AchievementRow(QFrame):
     def mousePressEvent(self, event):
         self.on_select(self.key, bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier))
         super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        if self.on_details:
+            self.on_details(self.key)
+        super().mouseDoubleClickEvent(event)
 
     def set_selected(self, selected):
         self.setProperty("selected", selected)

@@ -40,6 +40,22 @@ def render(output):
     app.processEvents()
     if not window.grab().save(str(output.with_name(output.stem + "-pending.png"))):
         raise RuntimeError("Could not save the pending-state render")
+    window.show_details("EXPLORER")
+    app.processEvents()
+    if not window.grab().save(str(output.with_name(output.stem + "-details.png"))):
+        raise RuntimeError("Could not save the embedded details render")
+    window.resize(1020, 760)
+    app.processEvents()
+    bottom = window.review_button.mapTo(window, window.review_button.rect().bottomRight())
+    if not window.rect().contains(bottom) or window.scroll.horizontalScrollBar().maximum():
+        raise RuntimeError("The minimum workspace clips its actions or achievement rows")
+    if not window.grab().save(str(output.with_name(output.stem + "-minimum.png"))):
+        raise RuntimeError("Could not save the minimum workspace render")
+    window.close_details()
+    window.search.setText("find")
+    app.processEvents()
+    if not window.grab().save(str(output.with_name(output.stem + "-search.png"))):
+        raise RuntimeError("Could not save the literal-highlight render")
     window.desired.clear()
     window.client = None
     window.close()
