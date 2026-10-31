@@ -31,6 +31,8 @@ def check_release(repo, current):
         if error.code == 404:
             raise ValueError("The repository or its public releases could not be found.") from None
         raise
+    if not isinstance(releases, list):
+        raise ValueError("GitHub returned an invalid release list. Please try again later.")
     valid = []
     for entry in releases:
         if not isinstance(entry, dict) or entry.get("draft"):
@@ -40,7 +42,7 @@ def check_release(repo, current):
         except (KeyError, ValueError):
             continue
         # Stable installations don't offer preview builds.
-        if version_key(current)[3] == 4 and entry.get("prerelease"):
+        if version_key(current)[3] == 4 and (entry.get("prerelease") or key[3] < 4):
             continue
         url = entry.get("html_url", "")
         if url.lower().startswith(f"https://github.com/{repo.lower()}/releases/tag/"):

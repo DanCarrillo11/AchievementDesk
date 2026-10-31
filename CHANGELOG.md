@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0 — 2026-10-30
+
+- Publish the first stable Windows release with installer and portable downloads.
+- Configure the official update repository and migrate old empty settings while preserving custom channels.
+- Keep stable updates separate from previews, including incorrectly labelled releases.
+- Read artwork by API name from structured schemas, independent of field order or missing variants.
+- Decode/check cached and downloaded images; recover corrupt files, release failed requests, and retain valid metadata during outages.
+- Add missing-artwork retry guidance while preserving the workspace layout.
+- Verify frozen startup, clean installation, upgrade from 0.8.2-preview, retained local data and uninstall on a disposable Windows runner.
+- Verify the source commit and uploaded asset checksums before publishing a draft as stable/latest.
+- Update installation, compatibility and release documentation. Existing game operations and review requirements remain in place.
+
 ## 0.8.2-preview
 
 - Cache each verified Steam account's discovered game library on disk so

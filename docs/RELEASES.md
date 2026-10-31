@@ -1,71 +1,68 @@
-# Release preparation
+# Releases
 
-The source repository is https://github.com/DanCarrillo11/AchievementDesk.
-The first public Windows preview is requested through `release-request.json`.
-The release workflow creates the downloadable Windows packages only after the
-build and tests complete. No stable version is claimed.
+The official repository is https://github.com/DanCarrillo11/AchievementDesk.
+Version 1.0.0 starts the stable release line. Application, executable, installer
+and `release-request.json` versions must agree.
 
-## Repository checks
+## Build and verify
 
-The Tests workflow runs synthetic and offscreen checks on Windows with Python
-3.11 and 3.14. It does not connect to a live Steam account. The separate **Build Windows preview** workflow supports manual runs that produce
-reviewable artifacts but no public release. A change to `release-request.json`
-on `main` triggers the same build and additionally publishes a prerelease.
-It packages the portable and source ZIPs, compiles the Inno Setup installer, and
-computes SHA-256 checksums for verification. Only the Portable ZIP and
-setup executable are attached to public releases.
+The **Tests** workflow runs synthetic/offscreen checks on Windows with Python
+3.11 and 3.14. **Build Windows release** also runs on pull requests, builds the
+frozen application, exercises its synthetic helper and offscreen interface, and
+compiles the installer with the runner's Inno Setup console compiler.
 
-## Reproduce
+On the disposable Windows runner it silently installs the checksum-pinned
+0.8.2-preview, upgrades to the candidate, verifies startup and retained synthetic
+local data, uninstalls, and then checks a clean install/uninstall. No native
+Steam session is used. Installer checks refuse to run outside Windows Actions.
 
-Use a Windows x64 environment, Python 3.11+ and Inno Setup 6.7.3's console compiler:
+To reproduce the portable build locally with Windows x64 and Python 3.11+:
 
 ```powershell
 python -m pip install -r requirements-build.txt
-python -m unittest discover -s tests -q
+python -m unittest discover -s tests -v
 python -m PyInstaller --clean --noconfirm AchievementDesk.spec
+python tools/verify_packaged.py dist/AchievementDesk
 python tools/package_release.py dist/AchievementDesk release
 $releaseRoot = (Resolve-Path release).Path
-$portableFolder = Join-Path $releaseRoot 'AchievementDesk-0.8.1-preview-Portable'
+$portableFolder = Join-Path $releaseRoot 'AchievementDesk-1.0.0-Portable'
 ISCC.exe "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
+python tools/publish_release.py checksums release
 ```
 
-Use absolute paths for BuildSource and OutputFolder when the compiler is run from
-another directory. Compilation runs in the console and does not launch the installer
-or application. The complete portable folder is required, including its helper,
-Qt runtime and license texts. The installer includes the same complete folder.
+Use a fresh `release` folder. Compilation does not run setup or open the app.
+Distribute the complete portable folder, including the helper, runtime and
+licenses. Source archives contain only approved project files.
 
-`workspace.VERSION`, `version_info.txt` and `installer.iss` must describe the same
-release before packaging. Generate SHA-256 checksums for the final archives/setup.
-The optional installer installs per user and retains preferences/history on uninstall.
+## Publication
 
-## Public release channel
+1. Review the candidate pull request and its Tests/Build Windows release checks.
+2. Set `release-request.json` to the exact version, `prerelease` flag and notes
+   file, and merge to `main`. Its change triggers a new build of that exact commit.
+3. After verification, a separate publication job receives `contents: write`.
+   Pull-request build jobs only have read access. Manual runs create artifacts
+   without publishing.
+4. The publisher validates archives and SHA-256 checksums, creates an unpublished
+   draft for the source commit, uploads exactly the portable ZIP and setup, then
+   verifies server-side asset sizes and hashes before publishing.
+5. Stable versions have `prerelease: false` and become **Latest**. Suffix versions
+   remain prereleases. Check the public tag, both downloads and checksum notes.
 
-1. Review the source commit, release notes and the completed Windows checks.
-2. With approval to publish, set `release-request.json` to the exact version in
-   `workspace.VERSION`, `version_info.txt` and `installer.iss`, and commit it to
-   `main`. The workflow builds and publishes that version as a GitHub prerelease.
-3. Confirm that the release has exactly two uploaded assets: the Windows portable
-   ZIP and the setup executable. Its tag is `v<version>`. GitHub also generates its
-   own source archives automatically; these are not uploaded release assets.
-4. Set that repository's `owner/name` in Settings → Updates and check it.
+Existing published releases are never reuploaded or moved to another commit.
+Retries may replace files only in the same source commit's unpublished draft.
+GitHub supplies source archives from the release tag; the two attached files are
+the end-user downloads. The notes contain their SHA-256 hashes. Build artifacts
+also retain the corresponding source ZIP and checksum file for 14 days.
 
-The checker reads at most 20 recent public releases. It skips drafts and invalid
-version tags, and skips prereleases for stable installations. It opens GitHub's
-release page only when the user chooses to; no downloaded code is executed by it.
+## Updates and upgrades
 
-## Validation scope
+Settings defaults to `DanCarrillo11/AchievementDesk`; older empty channels migrate
+to it without replacing a custom repository. Update checks run only on request
+and open a GitHub release page. They never download or execute an installer.
+Stable installations ignore previews by both tag and GitHub prerelease status.
 
-Tests use synthetic workers and offscreen Qt. Public presentation QA reads only
-public Steam pages/CDN/API data, without using the native Steam account connection.
-Optional runtime completion checks read the account's Steam Community page
-without cookies or credentials; private/missing completion stays unconfirmed.
-No automatic write probe is used for compatibility. The separately authorized
-real relock is documented in [validation evidence](validation/relock-2026-10-30.md).
-
-Artwork is not bundled with the executable; the screenshots show public artwork
-and explicitly synthetic states. A public source layout change can remove optional
-icons or rarity temporarily; the native state and reviewed write workflow remain
-independent of those presentation requests.
-
-The Achievement Desk installer is compiled, inspected and checksummed. Its interactive installation
-and uninstallation have not been exercised on the user's desktop.
+Close Achievement Desk before upgrading with setup. Portable users should extract
+into a new folder. Both distributions use `%LOCALAPPDATA%/AchievementDesk` for
+preferences, favorites, history, library cache and reference snapshots. Uninstall
+retains that folder. See the [1.0 release scope](validation/stable-1.0.0.md) for
+the game evidence and remaining platform limits.

@@ -1,9 +1,9 @@
 # Achievement Desk
 
-A Windows desktop preview for reading and managing Steam achievements through
+A Windows desktop application for reading and managing Steam achievements through
 your locally signed-in Steam client. Interface and documentation are in English.
 
-**Version: 0.8.1-preview.** Not affiliated with Valve. This is an independent
+**Version: 1.0.0.** Not affiliated with Valve. This is an independent
 Python implementation, with a Steam adapter adapted from SAM.API's interface
 layouts and connection approach. See THIRD_PARTY_NOTICES.txt.
 
@@ -33,7 +33,7 @@ and achievement states. This is not a screenshot of anyone's Steam account.*
 
 ## Optional installation
 
-Run **AchievementDesk-0.8.1-preview-Setup.exe** to install for the current Windows
+Run **AchievementDesk-1.0.0-Setup.exe** to install for the current Windows
 user, with a Start menu shortcut and optional desktop shortcut. Administrator
 access is not required. The app does not open automatically after installation
 unless you select that option. Uninstalling retains local preferences and history.
@@ -104,8 +104,11 @@ achievement details** is enabled in Settings, including in the review dialog.
 
 ### Artwork, preferences and history
 
-Images are loaded only for visible games and achievement pages, with a bounded
-background queue and local cache. Game icons use the existing read-only client
+Images are loaded only for visible games and achievement pages, with four
+background workers and a local cache. Downloads are decoded before caching.
+Corrupt cache entries are replaced; failed requests can retry after a short
+cooldown. A failed refresh retains valid cached metadata. Missing variants
+never borrow another achievement's artwork, and secret images stay concealed. Game icons use the existing read-only client
 metadata query for the standard icon hash, then Steam's local library cache or
 its public CDN. They are small list icons, not resized store covers. Missing hashes
 can fall back to the public app hub's small icon; rate-limited hub requests back
@@ -113,7 +116,10 @@ off without blocking the library. The app also uses public global achievement
 pages and GetGlobalAchievementPercentagesForApp. It sends App IDs,
 not account IDs or credentials, for presentation requests. No API key is needed.
 If Steam does not expose an image or percentage, the app uses a neutral fallback.
-These public web formats can change; Game tools includes **Refresh artwork & rarity**.
+These public web formats can change; **Game tools → Refresh artwork & rarity**
+clears failed-request cooldowns and fetches fresh metadata. Missing image tooltips
+explain how to retry. Incomplete metadata is cached briefly so a failed first
+request cannot hide images for a full day.
 Disable public artwork/rarity requests in Settings to use only local/native data.
 
 Favorites, recent games and the last selected game are scoped to the Steam account.
@@ -137,8 +143,9 @@ It compares version tags, ignores drafts, and offers a release-page link. It nev
 automatically downloads or runs an installer. Stable builds do not offer previews.
 
 **Source repository:** https://github.com/DanCarrillo11/AchievementDesk.
-No downloadable release has been published yet. The release field is intentionally
-empty until a release channel is ready. The checker is implemented and tested.
+The stable release channel is configured by default. Older empty settings migrate
+to this repository; a custom repository setting is preserved. Checks are manual,
+and stable installations ignore preview tags even if a release is mislabelled.
 See [Release instructions](RELEASES.md).
 
 ### Keyboard shortcuts
@@ -192,7 +199,7 @@ visible. Evidence is saved locally per account and survives restarts.
 
 Steam associates each native achievement connection with the selected App ID,
 so it may briefly show that game as **Running** even though the game executable
-has not opened. This preview does not provide a way to suppress that status.
+has not opened. The application does not provide a way to suppress that status.
 
 Since 0.1.1, achievement connections exist only while reading, refreshing or applying.
 Each helper exits before its result is displayed, including on errors. Searching,
@@ -223,8 +230,10 @@ An installed manifest from another account is not sufficient to pass the access 
 Choose **Refresh library** after switching Steam accounts or acquiring games.
 The old account's library and achievement view are cleared before a new scan.
 The account is checked again before loading achievements and before applying edits.
-The per-account library is kept in memory, not shipped in the application or
-saved in the shared catalog.
+The per-account library is saved locally under `library-cache/` after a successful
+scan and loaded only after Steam verifies the active account. Explicit refresh
+rescans ownership and installation status. It is never shipped or saved in the
+shared public catalog; cached listings do not authorize achievement changes.
 
 The bundled catalog is a snapshot of the public App ID list used by SAM:
 https://gib.me/sam/games.xml. Choose **Update game catalog** in Library tools to fetch its current
@@ -277,7 +286,7 @@ The native adapter uses versioned Steam client interfaces, not a supported
 cross-game Steam Web API. Steam updates can break compatibility. Native calls run
 in a separate helper process so an interface failure does not crash the window.
 
-No game artwork or achievement icons are included in this preview. No claim of
+Game artwork and achievement icons are downloaded on demand, rather than bundled. No claim of
 universal game compatibility or platform approval is made.
 
 ## Local data
@@ -326,7 +335,7 @@ their bundled license information under `_internal`.
 
 ## Validation evidence
 
-- 163 automated tests passed: plans, stale state, account mismatch, snapshot
+- The automated suite covers: plans, stale state, account mismatch, snapshot
   failures, rejected/partial/unconfirmed operations, manifest discovery and the
   worker protocol using synthetic data, withdrawn-window UI checks and on-demand
   connection cleanup after success, failure and account changes, catalog parsing
@@ -374,7 +383,7 @@ their bundled license information under `_internal`.
 2. Validate trophy-award timing on a deliberately selected game, separately from
    current achievement progress and without assuming that relocking removes trophies.
 3. Expand real compatibility evidence across game-specific achievement restrictions.
-4. Publish the dedicated repository, configure its release channel and enable CI releases.
+4. Expand Windows hardware/display coverage while maintaining the stable update channel.
 
 ## References
 

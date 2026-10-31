@@ -1,6 +1,8 @@
 # Security
 
-The current code is a preview. A stable-support window has not been established.
+The current stable line is **1.x**. Report security issues against the latest
+stable release. Older preview builds should be upgraded; no fixed response time
+or extended support period is promised.
 
 ## Reporting
 

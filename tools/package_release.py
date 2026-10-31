@@ -19,6 +19,8 @@ documents = ["README.md", "LICENSE", "THIRD_PARTY_NOTICES.txt", "CHANGELOG.md", 
 for name in documents:
     shutil.copy2(root / name, portable / name)
 shutil.copytree(root / "licenses", portable / "licenses")
+(portable / "assets").mkdir(exist_ok=True)
+shutil.copy2(root / "assets/app.png", portable / "assets/app.png")
 if (root / "docs").is_dir():
     shutil.copytree(root / "docs", portable / "docs")
 
@@ -28,7 +30,7 @@ with zipfile.ZipFile(output / (version + "-Portable.zip"), "w", zipfile.ZIP_DEFL
             archive.write(path, path.relative_to(output))
 
 source = sorted(root.glob("*.py")) + [root / name for name in documents]
-source += [root / name for name in ("AchievementDesk.spec", "requirements.txt", "requirements-build.txt", ".gitignore", ".gitattributes", ".editorconfig", "installer.iss", "version_info.txt")]
+source += [root / name for name in ("AchievementDesk.spec", "requirements.txt", "requirements-build.txt", ".gitignore", ".gitattributes", ".editorconfig", "installer.iss", "version_info.txt", "release-request.json", "RELEASE_NOTES.md")]
 for folder, pattern in (("tests", "*.py"), ("tools", "*.py"), ("licenses", "*.txt"), ("assets", "*.json"), ("assets", "*.ico"), ("assets", "*.png")):
     source += sorted((root / folder).glob(pattern))
 source += [p for p in (root / "docs").rglob("*") if p.is_file()]
