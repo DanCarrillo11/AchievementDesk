@@ -45,12 +45,18 @@ def check_installation(installer, previous=None):
                     raise RuntimeError("Installation changed retained local data: " + name)
         def install(path, label):
             subprocess.run([str(path), "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-",
-                            "/DIR=" + str(destination), "/GROUP=Achievement Desk Release Smoke", "/TASKS="],
+                            "/DIR=" + str(destination), "/GROUP=Achievement Desk Release Smoke", "/TASKS=",
+                            "/LOG=" + str(ROOT / (".ci-artifacts/" + label + ".log"))],
                            check=True, timeout=120, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
             run_gui(destination / "AchievementDesk.exe", ROOT / (".ci-artifacts/" + label + ".png"), environment)
             verify_retained()
+            print(label + " installed files: " + ", ".join(sorted(p.name for p in destination.iterdir())))
         def uninstall():
-            subprocess.run([str(destination / "unins000.exe"), "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"],
+            # Inno can allocate a new numbered uninstaller during an upgrade.
+            uninstallers = sorted(destination.glob("unins*.exe"))
+            if not uninstallers:
+                raise RuntimeError("Installer did not create an uninstaller in " + str(destination))
+            subprocess.run([str(uninstallers[-1]), "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"],
                            check=True, timeout=90, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
             deadline = time.monotonic() + 15
             while (destination / "AchievementDesk.exe").exists() and time.monotonic() < deadline:
