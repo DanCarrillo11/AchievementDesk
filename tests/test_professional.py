@@ -35,6 +35,17 @@ class WorkspaceTests(unittest.TestCase):
         self.assertEqual(Workspace(self.root).settings["width"], 1020)
         self.assertFalse(Workspace(self.root).settings["compact"])
 
+    def test_old_empty_update_channel_migrates_without_losing_preferences(self):
+        atomic_json(self.root / "workspace.json", dict(settings=dict(release_repository="", compact=True)))
+        loaded = Workspace(self.root)
+        self.assertEqual(loaded.settings["release_repository"], "DanCarrillo11/AchievementDesk")
+        self.assertTrue(loaded.settings["compact"])
+
+    def test_custom_update_repository_is_preserved(self):
+        self.workspace.settings["release_repository"] = "someone/CustomBuild"
+        self.workspace.save()
+        self.assertEqual(Workspace(self.root).settings["release_repository"], "someone/CustomBuild")
+
     def test_favorites_and_recents_are_account_scoped(self):
         self.workspace.favorite("A", 10)
         self.workspace.visit("A", 10)
@@ -85,7 +96,7 @@ class PresentationTests(unittest.TestCase):
     def test_public_schema_extracts_exact_keys_and_filenames(self):
         text = r'{\"api_name\":\"EXAMPLE\",\"name\":\"A public title\",\"icon_achieved\":\"abc.jpg\",\"icon_unachieved\":\"def.jpg\"}'
         self.assertEqual(parse_icons(text), {"EXAMPLE": {"unlocked": "abc.jpg", "locked": "def.jpg"}})
-        self.assertEqual(parse_icons(text.replace("abc.jpg", "../../x.jpg")), {})
+        self.assertEqual(parse_icons(text.replace("abc.jpg", "../../x.jpg")), {"EXAMPLE": {"locked": "def.jpg"}})
 
     def test_sort_keeps_unknown_rarity_and_locked_dates_last(self):
         rows = [dict(name="A", rarity=None, unlock_time=0), dict(name="B", rarity=90, unlock_time=100), dict(name="C", rarity=0, unlock_time=200)]
@@ -98,7 +109,7 @@ class PresentationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             posted, results = [], []
             media = Media(folder, posted.append)
-            with patch("media.fetch", return_value=b"\xff\xd8example") as request:
+            with patch("media.fetch", return_value=(Path(__file__).resolve().parents[1] / "assets/app.png").read_bytes()) as request:
                 media.image("https://cdn.akamai.steamstatic.com/steamcommunity/public/images/apps/440/" + "a" * 40 + ".jpg", results.append)
                 media.image("https://untrusted.invalid/image.jpg", results.append)
                 media.pool.shutdown(wait=True)
@@ -155,6 +166,20 @@ class UpdateTests(unittest.TestCase):
         data = [dict(tag_name="v0.7.0-preview", prerelease=True, html_url="https://github.com/a/App/releases/tag/v0.7.0-preview")]
         with patch("updates.fetch", return_value=json.dumps(data).encode()):
             self.assertFalse(check_release("a/App", "0.6.0")["newer"])
+
+    def test_stable_channel_rejects_preview_tags_even_if_mislabelled_on_github(self):
+        data = [dict(tag_name="v2.0.0-beta", prerelease=False, html_url="https://github.com/a/App/releases/tag/v2.0.0-beta")]
+        with patch("updates.fetch", return_value=json.dumps(data).encode()):
+            self.assertFalse(check_release("a/App", "1.0.0")["newer"])
+
+    def test_preview_installation_can_upgrade_to_stable(self):
+        data = [dict(tag_name="v1.0.0", prerelease=False, html_url="https://github.com/a/App/releases/tag/v1.0.0")]
+        with patch("updates.fetch", return_value=json.dumps(data).encode()):
+            self.assertTrue(check_release("a/App", "0.8.2-preview")["newer"])
+
+    def test_invalid_release_response_is_reported(self):
+        with patch("updates.fetch", return_value=b'{"message":"Rate limit"}'), self.assertRaisesRegex(ValueError, "invalid release list"):
+            check_release("a/App", "1.0.0")
 
 
 class NewUITests(unittest.TestCase):
@@ -226,6 +251,24 @@ class NewUITests(unittest.TestCase):
         record = self.window.display_record(next(row for row in self.window.rows if row.key == "SECRET"))
         self.assertTrue(record["concealed"])
         self.assertIsNone(record["icon_path"])
+
+    def test_failed_achievement_image_can_be_requested_again(self):
+        self.window.game = Game(10, "Game")
+        self.window.presentation[10] = dict(icons={"EXPLORER": {"locked": "a.jpg"}})
+        with patch.object(self.window.media, "enabled", True), patch.object(self.window.media, "achievement_icon", side_effect=lambda app, name, done: done(None)) as request:
+            for _ in range(2):
+                self.window.request_achievement_icons([dict(key="EXPLORER", actual=False)])
+            self.assertEqual(request.call_count, 2)
+        self.assertEqual(self.window.pending_icons, set())
+        self.assertEqual(self.window.client.mock_calls, [])
+
+    def test_failed_game_icon_does_not_stay_pending(self):
+        with patch.object(self.window.media, "enabled", True), patch.object(self.window.media, "game_icon", side_effect=lambda app, done, icon_hash: done(None)) as request:
+            self.window.request_game_icon(10)
+            self.window.request_game_icon(10)
+            self.assertEqual(request.call_count, 2)
+        self.assertEqual(self.window.pending_game_icons, set())
+        self.assertEqual(self.window.client.mock_calls, [])
 
     def test_cancel_is_not_available_for_apply(self):
         gate = threading.Event()

@@ -57,10 +57,12 @@ on optional artwork requests.
 
 ## Portable or installation problems
 
-Public downloads have not been released yet. When available, extract the entire
-portable archive, keeping `AchievementDesk.exe`, `AchievementDeskWorker.exe` and
-`_internal/` together. The optional setup is a per-user install. See
-[release preparation](RELEASES.md) for source builds and current validation limits.
+Download setup or the portable ZIP from the official
+[releases page](https://github.com/DanCarrillo11/AchievementDesk/releases/latest).
+Extract the entire portable archive, keeping `AchievementDesk.exe`,
+`AchievementDeskWorker.exe` and `_internal/` together. Setup installs for the
+current user. Python is not required for either download. See
+[release preparation](RELEASES.md) for source builds and verification details.
 
 ## Reporting a problem
 
@@ -68,3 +70,21 @@ Include the application version, Windows version, Steam stable/beta channel,
 public game App ID, exact error and minimal reproduction steps. Remove account
 IDs, personal paths, credentials and private library details from evidence.
 See [security reporting](../SECURITY.md) for sensitive issues.
+
+
+## Missing achievement artwork
+
+Secret achievement images stay concealed until **Settings → Show hidden
+achievement details** is enabled. For other missing images, enable public
+artwork in Settings and choose **Game tools → Refresh artwork & rarity**.
+Failed image requests release their pending state; normal retries use a short
+cooldown, while manual refresh clears it. Corrupt cached images are downloaded
+again, and an unavailable locked/unlocked image is left neutral. Images are
+optional and do not determine whether Steam accepts an achievement change.
+
+## Updating from a preview
+
+Close Achievement Desk and run the new setup. For portable updates, extract to a
+new folder instead of mixing runtime files from different versions. Your data
+stays under `%LOCALAPPDATA%/AchievementDesk`. The official update channel is
+configured automatically; use **Settings → Updates → Check for updates**.

@@ -575,6 +575,8 @@ class Desk(QMainWindow):
         self.pending_game_icons.add(app_id)
         def done(path):
             self.pending_game_icons.discard(app_id)
+            if path is None:
+                return
             pixmap = QPixmap(str(path))
             if pixmap.isNull():
                 return
@@ -603,6 +605,8 @@ class Desk(QMainWindow):
             self.media.failed.clear()
         self.request_game_icon(app_id)
         def done(value):
+            if not isinstance(value, dict):
+                return
             self.presentation[app_id] = value
             if self.game and self.game.app_id == app_id:
                 self.render()
@@ -624,6 +628,8 @@ class Desk(QMainWindow):
                 self.pending_icons.add(cache_key)
                 def done(path, cache_key=cache_key):
                     self.pending_icons.discard(cache_key)
+                    if path is None:
+                        return
                     self.icon_paths[cache_key] = str(path)
                     if self.game and self.game.app_id == cache_key[0]:
                         self.render()

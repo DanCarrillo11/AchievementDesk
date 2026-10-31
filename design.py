@@ -309,6 +309,9 @@ class AchievementRow(QFrame):
         pending = record["draft"] != record["actual"]
         self.mark.unlocked, self.mark.pending = record["actual"], pending
         self.mark.image = QPixmap(record.get("icon_path") or "")
+        self.mark.setToolTip("Hidden achievement artwork" if record.get("concealed") else
+                             "" if not self.mark.image.isNull() else
+                             "Artwork is unavailable or still loading. Use Game tools → Refresh artwork & rarity to retry.")
         self.mark.update()
         self.setProperty("pending", pending)
         text = f"{'Unlock' if record['draft'] else 'Lock'} pending · currently {state.lower()}" if pending else record["date"] if record["actual"] else ""

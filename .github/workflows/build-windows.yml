@@ -1,23 +1,22 @@
-name: Build Windows preview
+name: Build Windows release
 
-# Manual runs produce reviewable artifacts. Updating release-request.json on main
-# builds, validates, and publishes the requested preview as a GitHub prerelease.
 on:
   workflow_dispatch:
+  pull_request:
   push:
     branches: [main]
     paths: ['release-request.json']
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: achievementdesk-release
+  group: achievementdesk-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  portable:
-    runs-on: windows-latest
+  build:
+    runs-on: windows-2025
     timeout-minutes: 30
     env:
       QT_QPA_PLATFORM: offscreen
@@ -30,79 +29,74 @@ jobs:
         with:
           python-version: '3.14'
           cache: pip
-      - name: Validate release request and versions
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $request = Get-Content release-request.json -Raw | ConvertFrom-Json
-          $version = [string]$request.version
-          if ($version -notmatch '^\d+\.\d+\.\d+-(preview|alpha|beta)(\.\d+)?$') { throw 'Invalid preview version.' }
-          $actual = python -c "from workspace import VERSION; print(VERSION)"
-          if ($LASTEXITCODE -ne 0 -or $actual -ne $version) { throw 'workspace.VERSION does not match release request.' }
-          $fileVersion = Get-Content version_info.txt -Raw
-          if (-not $fileVersion.Contains("'$version'")) { throw 'Windows version_info.txt is out of sync.' }
-          if (-not (Select-String -Path installer.iss -Pattern ('^AppVersion=' + [regex]::Escape($version) + '$') -Quiet)) { throw 'Installer version is out of sync.' }
-          if ($env:GITHUB_EVENT_NAME -eq 'push') {
-            gh release view "v$version" --repo $env:GITHUB_REPOSITORY *> $null
-            if ($LASTEXITCODE -eq 0) { throw 'This version has already been published.' }
-            $global:LASTEXITCODE = 0
-          }
+      - name: Validate release metadata
+        id: release
+        run: python tools/publish_release.py validate
       - name: Install build dependencies
         run: python -m pip install -r requirements-build.txt
       - name: Run automated tests
         run: python -m unittest discover -s tests -v
       - name: Build the portable application
         run: python -m PyInstaller --clean --noconfirm AchievementDesk.spec
-      - name: Verify portable executables
-        shell: pwsh
-        run: |
-          if (-not (Test-Path 'dist/AchievementDesk/AchievementDesk.exe')) { throw 'Missing desktop executable.' }
-          if (-not (Test-Path 'dist/AchievementDesk/AchievementDeskWorker.exe')) { throw 'Missing Steam worker executable.' }
+      - name: Verify frozen runtime and synthetic worker
+        run: python tools/verify_packaged.py dist/AchievementDesk
       - name: Package portable and source archives
         run: python tools/package_release.py dist/AchievementDesk release
       - name: Compile Windows installer
         shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
-          if (-not (Test-Path -LiteralPath $compiler)) {
-            choco install innosetup --no-progress -y
-            if ($LASTEXITCODE -ne 0) { throw 'Could not install Inno Setup.' }
-          }
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
           if (-not (Test-Path -LiteralPath $compiler)) { throw 'Inno Setup compiler is missing.' }
-          $request = Get-Content release-request.json -Raw | ConvertFrom-Json
           $output = (Resolve-Path release).Path
-          $source = Join-Path $output ("AchievementDesk-" + $request.version + "-Portable")
+          $source = Join-Path $output ("AchievementDesk-" + $env:APP_VERSION + "-Portable")
           & $compiler "/DBuildSource=$source" "/DOutputFolder=$output" installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
-          $setup = Join-Path $output ("AchievementDesk-" + $request.version + "-Setup.exe")
-          if (-not (Test-Path -LiteralPath $setup)) { throw 'Installer was not produced.' }
-      - name: Generate release SHA-256 checksums
+      - name: Verify clean installation and upgrade from the previous preview
         shell: pwsh
+        env:
+          APP_VERSION: ${{ steps.release.outputs.version }}
         run: |
-          $checksumLines = Get-ChildItem -LiteralPath release -File | Where-Object { $_.Extension -in '.zip', '.exe' } | Sort-Object Name | ForEach-Object {
-            $hash = Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
-            '{0}  {1}' -f $hash.Hash.ToLowerInvariant(), $_.Name
-          }
-          if (@($checksumLines).Count -ne 3) { throw 'Expected source ZIP, portable ZIP and setup executable.' }
-          $checksumLines | Set-Content -LiteralPath release/SHA256SUMS.txt -Encoding ascii
+          New-Item -ItemType Directory -Force .ci-artifacts | Out-Null
+          $previous = Join-Path (Resolve-Path .ci-artifacts).Path 'previous-Setup.exe'
+          Invoke-WebRequest 'https://github.com/DanCarrillo11/AchievementDesk/releases/download/v0.8.2-preview/AchievementDesk-0.8.2-preview-Setup.exe' -OutFile $previous
+          $expected = '285d2b71061f42aaea4be8d5e4b3a38986c15931b4e690e06ace934088bec03d'
+          if ((Get-FileHash -LiteralPath $previous -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Previous installer checksum mismatch.' }
+          python tools/verify_packaged.py "release/AchievementDesk-$env:APP_VERSION-Portable" --installer "release/AchievementDesk-$env:APP_VERSION-Setup.exe" --previous-installer $previous
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged installation checks failed.' }
+      - name: Verify archive privacy and generate checksums
+        run: python tools/publish_release.py checksums release
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: AchievementDesk-Windows-preview
+          name: AchievementDesk-release-inputs
           path: |
             release/*-Portable.zip
             release/*-Setup.exe
+            release/*-source.zip
+            release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
-      - name: Publish GitHub prerelease
-        if: github.event_name == 'push'
-        shell: pwsh
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: AchievementDesk-release-inputs
+          path: release
+      - name: Publish verified GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          $request = Get-Content release-request.json -Raw | ConvertFrom-Json
-          $tag = "v$($request.version)"
-          $setup = (Resolve-Path ("release/AchievementDesk-" + $request.version + "-Setup.exe")).Path
-          $portable = (Resolve-Path ("release/AchievementDesk-" + $request.version + "-Portable.zip")).Path
-          gh release create $tag $setup $portable --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "Achievement Desk $tag" --notes-file RELEASE_NOTES.md --prerelease
-          if ($LASTEXITCODE -ne 0) { throw 'GitHub release publication failed.' }
+        run: python tools/publish_release.py publish release

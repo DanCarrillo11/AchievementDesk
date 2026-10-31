@@ -1,27 +1,50 @@
-# Achievement Desk v0.8.2-preview — Faster Steam library loading
+# Achievement Desk 1.0.0
 
-This Windows x64 preview adds an **account-specific library cache**, so Achievement Desk does not rescan thousands of Steam App IDs on every launch.
+The first stable Windows x64 release of Achievement Desk: a focused desktop
+workspace for managing Steam achievements with reviewed changes and clear results.
 
-## What's new
+## Included
 
-- **Remember discovered games:** after a successful first full scan, Achievement Desk saves each game's Steam App ID, name, installed status, and icon hash locally.
-- **Faster launches:** subsequent starts verify the current Steam account and load its saved game list instead of repeating the full catalog scan.
-- **Manual refresh:** choose **Library tools → Refresh library**, or press **Ctrl+R** on the library page, to check for newly acquired, removed, installed, or uninstalled games.
-- **Separate accounts:** each Steam account has its own snapshot, preventing one account's library from appearing under another.
-- **Safer storage:** snapshots are validated and written atomically. Invalid or damaged snapshots trigger rediscovery; failed refreshes do not overwrite the prior valid snapshot.
-- **No achievement changes:** the cache only stores display metadata. Ownership checks and achievement reads/writes still go through Steam.
+- Embedded A–Z game library with search, 100-game pages and Steam list icons.
+- Account-specific saved libraries, favorites and recent games.
+- Achievement switches, filters, sorting and an explicit before/after review.
+- Confirmed, rejected, partial and unconfirmed results with local activity history.
+- Achievement sets and Steam-reported completion, with eligible set unlock drafts.
+- Dark interface, compact rows, keyboard shortcuts and remembered preferences.
 
-## Downloads
+## Stable release improvements
 
-- **AchievementDesk-0.8.2-preview-Setup.exe** — Windows per-user installer.
-- **AchievementDesk-0.8.2-preview-Portable.zip** — portable Windows x64 application; extract the complete folder before launching.
+- The official update repository is configured automatically, including migration
+  from empty preview settings. Stable builds ignore preview updates.
+- Artwork parsing uses structured API-name associations and supports missing image
+  variants without mixing achievements. Corrupt images are replaced, failed
+  requests can retry, and valid cached data survives temporary Steam failures.
+- The release build checks frozen startup and the synthetic worker, clean setup,
+  upgrade from 0.8.2-preview, local-data retention and uninstallation before upload.
+- The two downloads are verified in a draft before publication; SHA-256 hashes
+  are included below. No Steam account is used by automated publication tests.
 
-The first launch still needs to scan the Steam game catalog. Steam must be running and signed in so the app can verify which account owns the saved library.
+## Downloads and upgrading
 
-## Compatibility and safety
+- **AchievementDesk-1.0.0-Setup.exe** — per-user Windows installer.
+- **AchievementDesk-1.0.0-Portable.zip** — extract the complete folder and run
+  AchievementDesk.exe; keep its helper and `_internal` folder together.
 
-This is an **early preview, not a stable release**. Windows x64 and an online, signed-in Steam desktop client are required for live account operations; no Steam password or API key is requested. A saved game listing is not proof that a game still belongs to the current account or that its achievements are editable.
+Python is not required. Steam must be running, signed in and online for live
+operations. Games do not need to be installed. Close Achievement Desk before
+running setup over an existing installation. Extract portable updates into a new
+folder. Preferences, favorites, history and library cache remain in the same
+local data folder and are retained on uninstall.
 
-The automated suite covers the account-scoped cache, corrupted snapshots, explicit refresh, and UI behavior, but it does not prove compatibility with every Steam game or test a full installer upgrade on your computer. The app is independent and unaffiliated with Valve.
+## Compatibility
 
-Achievement changes continue to require explicit review and confirmation. Some protected or server-controlled achievements may reject writes. Reference snapshots do not restore historical unlock dates, trophy history, or game saves.
+The owner reports successful use with their tested games. Compatibility remains
+specific to the game and achievement: protected or server-controlled achievements
+can reject changes. Steam controls completion trophies and their persistence;
+relocking does not guarantee trophy removal. Missing/private completion remains
+Unconfirmed. Reference snapshots cannot restore old unlock dates, trophies or
+game saves. Steam client updates may affect the native interfaces.
+
+No password or API key is requested. This independent app is not affiliated with
+Valve or Steam Achievement Manager. Binaries are not code-signed. See the user
+guide and stable release scope in the repository for details.

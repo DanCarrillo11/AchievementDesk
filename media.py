@@ -52,15 +52,82 @@ def fetch(url, limit=5_000_000):
         return data
 
 
-def parse_icons(text):
-    # Steam Community's server-rendered page embeds an escaped JSON schema.
-    # Only API names and validated image filenames are used; descriptions stay native.
+def parse_icons(text, app_id=None):
+    """Read exact API-name/image pairs without depending on JSON field order."""
+    from completion import steam_queries
     result = {}
-    pattern = r'\\"api_name\\":\\"([^"\\]+)\\".{0,6000}?\\"icon_achieved\\":\\"([A-Za-z0-9_.-]+)\\".{0,300}?\\"icon_unachieved\\":\\"([A-Za-z0-9_.-]+)\\"'
-    for key, unlocked, locked in re.findall(pattern, text, re.S):
-        if len(key) <= 256 and len(unlocked) <= 128 and len(locked) <= 128:
-            result[key] = dict(unlocked=unlocked, locked=locked)
+    def add(row):
+        if not isinstance(row, dict):
+            return
+        key = row.get("api_name")
+        if not isinstance(key, str) or not 0 < len(key) <= 256:
+            return
+        icons = {}
+        for variant, field in (("unlocked", "icon_achieved"), ("locked", "icon_unachieved")):
+            name = row.get(field)
+            if isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,122}\.(?:jpg|jpeg|png)", name, re.I):
+                icons[variant] = name
+        if icons:
+            result[key] = icons
+    try:
+        queries = steam_queries(text)
+    except (ValueError, TypeError):
+        queries = []
+    for key, schema in queries:
+        if (not isinstance(key, list) or key[:1] != ["achievements"] or key[2:3] != ["schema_v2"]
+                or not isinstance(schema, dict) or schema.get("appid") != key[1]
+                or app_id is not None and schema.get("appid") != app_id):
+            continue
+        for group in schema.get("groups", []) if isinstance(schema.get("groups"), list) else []:
+            if isinstance(group, dict) and isinstance(group.get("achievements"), list):
+                for row in group["achievements"][:10000]:
+                    add(row)
+    if queries or 'id="valve-ssr-data"' in text or "id='valve-ssr-data'" in text:
+        return result  # Never fall back to data from a different game's SSR schema.
+    # Older public pages may embed plain or once-escaped JSON objects.
+    # Decode each object separately so a missing icon cannot borrow the next row's.
+    for raw in re.findall(r"\{[^{}]{1,20000}\}", text):
+        if "api_name" not in raw:
+            continue
+        try:
+            decoded = json.loads(raw)
+        except (ValueError, TypeError):
+            try:
+                decoded = json.loads(json.loads('"' + raw + '"'))
+            except (ValueError, TypeError):
+                continue
+        add(decoded)
     return result
+
+
+def valid_metadata(value):
+    if (not isinstance(value, dict) or value.get("format") != 2
+            or not isinstance(value.get("icons"), dict) or not isinstance(value.get("percentages"), dict)
+            or not isinstance(value.get("warnings", []), list)):
+        return False
+    for key, variants in value["icons"].items():
+        if not isinstance(key, str) or not isinstance(variants, dict):
+            return False
+        for variant, name in variants.items():
+            if (variant not in ("locked", "unlocked") or not isinstance(name, str)
+                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,122}\.(?:jpg|jpeg|png)", name, re.I)):
+                return False
+    return all(isinstance(k, str) and type(v) in (int, float) and 0 <= v <= 100
+               for k, v in value["percentages"].items())
+
+
+def valid_image(data):
+    """Reject error pages, corrupt downloads and unexpectedly large image sizes."""
+    from PySide6.QtCore import QByteArray, QBuffer, QIODevice
+    from PySide6.QtGui import QImageReader
+    if not (data.startswith(b'\xff\xd8') or data.startswith(b'\x89PNG')):
+        return False
+    buffer = QBuffer()
+    buffer.setData(QByteArray(data))
+    buffer.open(QIODevice.OpenModeFlag.ReadOnly)
+    reader = QImageReader(buffer)
+    size = reader.size()
+    return 0 < size.width() <= 2048 and 0 < size.height() <= 2048 and not reader.read().isNull()
 
 
 def percentages(payload):
@@ -79,7 +146,7 @@ class Media:
     def __init__(self, folder, post, enabled=True):
         self.folder, self.post, self.enabled = Path(folder), post, enabled
         self.pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="artwork")
-        self.pending, self.failed = {}, set()
+        self.pending, self.failed = {}, {}
         self.lock = threading.Lock()
         self.closed = False
         self.steam_cache = None
@@ -89,45 +156,56 @@ class Media:
 
     def submit(self, key, job, done):
         if not self.enabled or self.closed:
+            if not self.closed:
+                self.post(lambda: done(None))
             return
         with self.lock:
-            if key in self.failed:
-                return
-            if key in self.pending:
+            cooling = time.monotonic() < self.failed.get(key, 0)
+            if not cooling and key in self.pending:
                 self.pending[key].append(done)
                 return
-            self.pending[key] = [done]
+            if not cooling:
+                self.pending[key] = [done]
+        if cooling:
+            self.post(lambda: done(None))
+            return
         def run():
             try:
                 value = job()
             except Exception:
                 with self.lock:
-                    self.failed.add(key)
-            else:
-                with self.lock:
-                    callbacks = self.pending.pop(key, [])
-                if not self.closed:
-                    for callback in callbacks:
-                        self.post(lambda callback=callback: callback(value))
-            if key in self.failed:
-                with self.lock:
-                    self.pending.pop(key, None)
+                    self.failed[key] = time.monotonic() + 60
+                value = None
+            with self.lock:
+                callbacks = self.pending.pop(key, [])
+            if not self.closed:
+                for callback in callbacks:
+                    self.post(lambda callback=callback: callback(value))
         self.pool.submit(run)
 
     def image_path(self, url):
         return self.folder / "images" / (hashlib.sha256(url.encode()).hexdigest() + ".img")
 
     def image(self, url, done):
+        if not self.enabled or self.closed:
+            if not self.closed:
+                self.post(lambda: done(None))
+            return
         if urlparse(url).hostname not in ("cdn.akamai.steamstatic.com", "shared.fastly.steamstatic.com", "shared.akamai.steamstatic.com"):
             return
         path = self.image_path(url)
-        if path.is_file():
-            done(path)
-            return
+        try:
+            if path.is_file():
+                if path.stat().st_size <= 5_000_000 and valid_image(path.read_bytes()):
+                    done(path)
+                    return
+                path.unlink()
+        except OSError:
+            pass
         def job():
             data = fetch(url)
-            if not (data.startswith(b'\xff\xd8') or data.startswith(b'\x89PNG')):
-                raise ValueError("Steam artwork was not a JPEG or PNG.")
+            if not valid_image(data):
+                raise ValueError("Steam artwork was not a valid, reasonably sized JPEG or PNG.")
             path.parent.mkdir(parents=True, exist_ok=True)
             temporary = path.with_suffix(".tmp")
             temporary.write_bytes(data)
@@ -188,29 +266,36 @@ class Media:
                 if cached:
                     return cached
                 raise
-        self.submit(f"game-icon:{app_id}", job, lambda url: self.image(url, done))
+        self.submit(f"game-icon:{app_id}", job, lambda url: self.image(url, done) if url else done(None))
 
     def metadata(self, app_id, done, force=False):
         if app_id <= 0:
             return
         path = self.folder / f"schema-{app_id}.json"
         def job():
+            cached = None
             try:
-                if not force and time.time() - path.stat().st_mtime < 86400:
-                    cached = json.loads(path.read_text(encoding="utf-8"))
-                    if isinstance(cached, dict) and isinstance(cached.get("icons"), dict) and isinstance(cached.get("percentages"), dict):
+                candidate = json.loads(path.read_text(encoding="utf-8"))
+                if valid_metadata(candidate):
+                    cached = candidate
+                    lifetime = 60 if cached.get("warnings") else 86400
+                    if not force and time.time() - path.stat().st_mtime < lifetime:
                         return cached
             except (OSError, ValueError):
                 pass
-            value = dict(icons={}, percentages={})
+            value = dict(format=2, icons={}, percentages={}, warnings=[])
             try:
-                value["icons"] = parse_icons(fetch(f"https://steamcommunity.com/stats/{app_id}/achievements/?l=english").decode("utf-8"))
+                value["icons"] = parse_icons(fetch(f"https://steamcommunity.com/stats/{app_id}/achievements/?l=english").decode("utf-8"), app_id)
+                if not value["icons"]:
+                    raise ValueError("Steam did not expose achievement images.")
             except Exception:
-                pass
+                value["icons"] = cached.get("icons", {}) if cached else {}
+                value["warnings"].append("Some achievement images are unavailable from Steam.")
             try:
                 value["percentages"] = percentages(json.loads(fetch(f"https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid={app_id}")))
             except Exception:
-                pass
+                value["percentages"] = cached.get("percentages", {}) if cached else {}
+                value["warnings"].append("Global achievement rarity is unavailable from Steam.")
             atomic_json(path, value)
             return value
         self.submit(f"metadata:{app_id}", job, done)

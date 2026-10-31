@@ -1,3 +1,5 @@
 {
-  "version": "0.8.2-preview"
+  "version": "1.0.0",
+  "prerelease": false,
+  "notes_file": "RELEASE_NOTES.md"
 }

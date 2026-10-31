@@ -5,6 +5,7 @@ import argparse
 def main():
     from workspace import VERSION
     parser = argparse.ArgumentParser(description=f"Achievement Desk {VERSION}")
+    parser.add_argument("--version", action="version", version=f"Achievement Desk {VERSION}")
     parser.add_argument("--worker", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--demo", action="store_true", help="Use synthetic data without connecting to Steam")
     parser.add_argument("--library", action="store_true", help=argparse.SUPPRESS)
