@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLine
     QListWidgetItem, QStyledItemDelegate, QStyle, QPushButton, QTreeWidget, QTreeWidgetItem,
     QTextEdit, QFileDialog, QButtonGroup)
 from design import label, button, icon, draw_match_text
+from experience import page_numbers
 from compatibility import FILTERS as COMPATIBILITY_FILTERS, status as compatibility_status, details as compatibility_details
 
 
@@ -148,13 +149,23 @@ class LibraryPage(QWidget):
         self.empty = label("Your library will appear here after Steam discovery.", "Subtitle", True)
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.empty)
+        self.page_navigation = QWidget()
+        navigation = QHBoxLayout(self.page_navigation)
+        navigation.setContentsMargins(0, 0, 0, 0)
+        self.previous = button("Previous", lambda: self.turn(-1))
+        self.next = button("Next", lambda: self.turn(1))
+        navigation.addWidget(self.previous)
+        navigation.addStretch()
+        self.page_links = QHBoxLayout()
+        self.page_links.setSpacing(5)
+        navigation.addLayout(self.page_links)
+        navigation.addStretch()
+        navigation.addWidget(self.next)
+        self.page_buttons = {}
+        layout.addWidget(self.page_navigation)
         footer = QHBoxLayout()
         self.count = label("", "Small")
         footer.addWidget(self.count, 1)
-        self.previous = button("Previous", lambda: self.turn(-1))
-        self.next = button("Next", lambda: self.turn(1))
-        footer.addWidget(self.previous)
-        footer.addWidget(self.next)
         self.favorite = button("Favorite", self.toggle_favorite)
         footer.addWidget(self.favorite)
         self.open = button("Open game", self.open_selected, True)
@@ -185,6 +196,35 @@ class LibraryPage(QWidget):
     def turn(self, step):
         self.page += step
         self.render()
+
+    def go_to_page(self, number):
+        self.page = number
+        self.render()
+        if self.page in self.page_buttons:
+            self.page_buttons[self.page].setFocus()
+
+    def render_page_links(self, total):
+        while self.page_links.count():
+            widget = self.page_links.takeAt(0).widget()
+            if widget:
+                widget.hide()
+                widget.deleteLater()
+        self.page_buttons = {}
+        self.page_navigation.setVisible(total > 0)
+        for number in page_numbers(self.page, total):
+            if number is None:
+                self.page_links.addWidget(label("…", "Small"))
+                continue
+            control = QPushButton(str(number + 1))
+            control.setObjectName("PageNumber")
+            control.setCheckable(True)
+            control.setChecked(number == self.page)
+            control.setFixedSize(max(32, control.fontMetrics().horizontalAdvance(control.text()) + 20), 34)
+            control.setAccessibleName(f"{'Current page' if number == self.page else 'Go to page'} {number + 1} of {total}")
+            control.setToolTip(f"Page {number + 1} of {total}")
+            control.clicked.connect(lambda checked=False, number=number: self.go_to_page(number))
+            self.page_links.addWidget(control)
+            self.page_buttons[number] = control
 
     def selected(self):
         item = self.games.currentItem()
@@ -244,6 +284,7 @@ class LibraryPage(QWidget):
         self.empty.setText("No games match this letter and search. Choose All or clear the search." if self.desk.library else "Your library will appear here after Steam discovery.")
         self.previous.setEnabled(self.page > 0)
         self.next.setEnabled(start + self.PAGE_SIZE < len(games))
+        self.render_page_links(math.ceil(len(games) / self.PAGE_SIZE))
         self.selection_changed()
         self.layout_timer.start(0)
 

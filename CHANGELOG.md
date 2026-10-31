@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 — 2026-10-30
+
+- Display an explicit achievement loading state and indeterminate indicator instead of a false empty result.
+- Distinguish cancelled/failed reads, unknown apply results and successful empty responses.
+- Show the selected game's name while reading and disable actions that refer to the prior game.
+- Add clickable library page numbers with current-page highlighting, first/last links and bounded ellipses.
+- Recalculate pages within the current letter/search/filter while preserving pending changes and 100-game pages.
+- Verify slow reads, cancellation, failures, empty replies, filtered page jumps and minimum-size navigation.
+- Verify frozen loading/page views and installer upgrade from 1.1.0 before publication.
+
 ## 1.1.0 — 2026-10-30
 
 - Compact game header with Steam's small list icon and more room for achievements.

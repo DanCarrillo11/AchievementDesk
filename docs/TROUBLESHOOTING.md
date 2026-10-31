@@ -88,3 +88,19 @@ Close Achievement Desk and run the new setup. For portable updates, extract to a
 new folder instead of mixing runtime files from different versions. Your data
 stays under `%LOCALAPPDATA%/AchievementDesk`. The official update channel is
 configured automatically; use **Settings → Updates → Check for updates**.
+
+
+## Achievement loading or an empty result
+
+**Loading achievements…** means the read is still in progress. Use **Cancel read**
+to stop waiting. A failed read offers **Retry** and error details; it is not
+reported as a game without achievements. **No achievements returned** appears
+only after a successful read returns an empty list. An unconfirmed apply asks
+you to check Steam and reload instead of treating missing data as an empty game.
+
+## Library page numbers
+
+Page numbers apply to the active A–Z letter, search and library filter. A new
+search or letter starts at page 1. Ellipses skip long ranges; the first/last and
+nearby pages are clickable. Empty results hide the page bar. The pending review
+queue stays intact while browsing pages.

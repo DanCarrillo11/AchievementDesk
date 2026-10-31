@@ -3,7 +3,7 @@
 A Windows desktop application for reading and managing Steam achievements through
 your locally signed-in Steam client. Interface and documentation are in English.
 
-**Version: 1.1.0.** Not affiliated with Valve. This is an independent
+**Version: 1.2.0.** Not affiliated with Valve. This is an independent
 Python implementation, with a Steam adapter adapted from SAM.API's interface
 layouts and connection approach. See THIRD_PARTY_NOTICES.txt.
 
@@ -33,7 +33,7 @@ and achievement states. This is not a screenshot of anyone's Steam account.*
 
 ## Optional installation
 
-Run **AchievementDesk-1.1.0-Setup.exe** to install for the current Windows
+Run **AchievementDesk-1.2.0-Setup.exe** to install for the current Windows
 user, with a Start menu shortcut and optional desktop shortcut. Administrator
 access is not required. The app does not open automatically after installation
 unless you select that option. Uninstalling retains local preferences and history.
@@ -101,6 +101,21 @@ Tab and Space can also be used to operate the achievement switches.
 
 Hidden achievement names and descriptions stay concealed unless **Show hidden
 achievement details** is enabled in Settings, including in the review dialog.
+
+### Loading and library pages in 1.2
+
+Opening a game immediately shows **Loading achievements…** with a small
+indeterminate progress indicator. A pending read, cancelled read, failed read,
+unconfirmed result and successfully returned empty list are distinct states.
+The selected game's name appears while reading. Refreshing an already loaded
+game keeps the current rows visible with their switches disabled until finished.
+
+The embedded library includes numbered pages alongside **Previous** and **Next**.
+Click a number to jump directly within the current letter, search and filter.
+The current page is highlighted; first/last pages and nearby pages stay visible,
+with ellipses for long ranges. Numbers are recalculated when the result set
+changes. Each page still contains up to 100 games; browsing never submits drafts
+or opens a native achievement connection.
 
 ### Workspace improvements in 1.1
 

@@ -57,5 +57,30 @@ def render(output):
     if not window.grab().save(str(output.with_name(output.stem + "-search.png"))):
         raise RuntimeError("Could not save the literal-highlight render")
     window.desired.clear()
+    window.clear_filters()
+    window.library = [Game(1000+i, f"Example Game {i:04}") for i in range(2105)]
+    window.browse_library()
+    window.library_page.set_letter("E")
+    window.library_page.go_to_page(10)
+    app.processEvents()
+    if not window.library_page.page_buttons[10].isChecked():
+        raise RuntimeError("The numbered page did not become active")
+    for control in window.library_page.page_buttons.values():
+        if not window.rect().contains(control.mapTo(window, control.rect().bottomRight())):
+            raise RuntimeError("Numbered pages do not fit the minimum workspace")
+    if not window.grab().save(str(output.with_name(output.stem + "-pages.png"))):
+        raise RuntimeError("Could not save numbered pagination")
+    window.show_achievements()
+    window.rows.clear()
+    window.achievement_read_state, window.achievement_target = "loading", window.game
+    window.busy = True
+    window.render()
+    app.processEvents()
+    if window.empty_title.text() != "Loading achievements…" or window.empty_loading.isHidden():
+        raise RuntimeError("A pending achievement read was displayed as an empty result")
+    if not window.grab().save(str(output.with_name(output.stem + "-loading.png"))):
+        raise RuntimeError("Could not save the achievement loading state")
+    window.busy = False
+    window.desired.clear()
     window.client = None
     window.close()

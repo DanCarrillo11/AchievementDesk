@@ -12,7 +12,7 @@ frozen application, exercises its synthetic helper and offscreen interface (incl
 compiles the installer with the runner's Inno Setup console compiler.
 
 On the disposable Windows runner it silently installs the checksum-pinned
-1.0.0, upgrades to the candidate, verifies startup and retained synthetic
+1.1.0, upgrades to the candidate, verifies startup and retained synthetic
 local data, uninstalls, and then checks a clean install/uninstall. No native
 Steam session is used. Installer checks refuse to run outside Windows Actions.
 
@@ -25,7 +25,7 @@ python -m PyInstaller --clean --noconfirm AchievementDesk.spec
 python tools/verify_packaged.py dist/AchievementDesk
 python tools/package_release.py dist/AchievementDesk release
 $releaseRoot = (Resolve-Path release).Path
-$portableFolder = Join-Path $releaseRoot 'AchievementDesk-1.1.0-Portable'
+$portableFolder = Join-Path $releaseRoot 'AchievementDesk-1.2.0-Portable'
 ISCC.exe "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
 python tools/publish_release.py checksums release
 ```

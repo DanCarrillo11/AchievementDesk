@@ -51,6 +51,8 @@ QPushButton#Segment:hover { color: #f5f5f7; background: #353538; }
 QPushButton#LetterButton { background: transparent; color: #b6b6be; border: none; border-radius: 5px; padding: 0; font-size: 11px; }
 QPushButton#LetterButton:checked { background: #193856; color: #93c5ff; }
 QPushButton#LetterButton:hover { background: #303034; color: #f5f5f7; }
+QPushButton#PageNumber { padding: 0; border-radius: 6px; color: #b6b6be; background: #242426; }
+QPushButton#PageNumber:checked { color: #93c5ff; background: #193856; border-color: #36516b; }
 QPushButton#LibraryBrowse:checked { background: #193856; color: #93c5ff; border-color: #193856; }
 QListWidget#CompactGameList { background: transparent; border: 1px solid #3a3a3f; border-radius: 10px; padding: 5px; }
 QProgressBar { background: #3a3a3f; border: none; border-radius: 3px; max-height: 5px; min-height: 5px; }

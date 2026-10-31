@@ -104,6 +104,7 @@ class Desk(QMainWindow):
         self.pending_game_icons, self.pending_icons = set(), set()
         self.library_page, self.activity_id, self.active_reader = None, None, None
         self.cancel_requested, self.can_cancel = False, False
+        self.achievement_read_state, self.achievement_target = "idle", None
         self.completions, self.completion_generation, self.achievement_set = {}, 0, None
         self.completion_requests = {}
         self.completion_service = CompletionService(self.callbacks.put)
@@ -466,6 +467,13 @@ class Desk(QMainWindow):
         self.empty_panel = QWidget()
         empty_layout = QVBoxLayout(self.empty_panel)
         empty_layout.setContentsMargins(24, 36, 24, 36)
+        self.empty_loading = QProgressBar()
+        self.empty_loading.setRange(0, 0)
+        self.empty_loading.setTextVisible(False)
+        self.empty_loading.setFixedWidth(180)
+        self.empty_loading.setAccessibleName("Reading achievements from Steam")
+        empty_layout.addWidget(self.empty_loading, 0, Qt.AlignmentFlag.AlignHCenter)
+        self.empty_loading.hide()
         self.empty_title = label("", "Metric", True)
         self.empty_hint = label("", "Subtitle", True)
         for widget in (self.empty_title, self.empty_hint):
@@ -932,6 +940,7 @@ class Desk(QMainWindow):
 
     def sync_controls(self):
         ready = bool(self.client and self.rows)
+        current_game = bool(self.game and (self.achievement_target is None or self.achievement_target.app_id == self.game.app_id))
         for action in (self.refresh_library_action, self.catalog_action, self.add_id_action, self.hidden_action):
             action.setEnabled(not self.busy)
         self.refresh_action.setEnabled(bool(self.client) and not self.busy)
@@ -948,9 +957,9 @@ class Desk(QMainWindow):
         self.clear_button.setEnabled(bool(self.desired) and not self.busy)
         self.review_button.setEnabled(ready and bool(self.desired) and not self.busy)
         self.games.setEnabled(not self.busy)
-        self.favorite_button.setEnabled(bool(self.game) and not self.busy)
-        self.compatibility_button.setEnabled(bool(self.game))
-        self.sets_button.setEnabled(bool(self.game))
+        self.favorite_button.setEnabled(current_game and not self.busy)
+        self.compatibility_button.setEnabled(current_game and not self.busy)
+        self.sets_button.setEnabled(current_game and not self.busy)
         favorite = bool(self.game and self.game.app_id in self.profile()["favorites"])
         self.favorite_button.setText("Favorited" if favorite else "Favorite")
         self.favorite_button.setIcon(icon("star_filled" if favorite else "star", "#93c5ff" if favorite else "#b6b6be"))
@@ -963,7 +972,7 @@ class Desk(QMainWindow):
             card.switch.setToolTip(restriction if restriction and row and not row.unlocked else "Prepare an achievement change for review")
         self.completion_page.render()
 
-    def task(self, job, success, uncertain=False, can_cancel=False, retry=None):
+    def task(self, job, success, uncertain=False, can_cancel=False, retry=None, achievement_read=False):
         if self.busy:
             return
         self.busy = True
@@ -975,6 +984,10 @@ class Desk(QMainWindow):
         self.operation_bar.show()
         self.cancel_button.setVisible(self.can_cancel)
         self.cancel_button.setEnabled(True)
+        if achievement_read:
+            self.achievement_read_state = "loading"
+            self.achievement_target = self.achievement_target or self.game
+            self.render()
         self.sync_controls()
         def finish(value=None, error=None):
             self.busy = False
@@ -986,10 +999,16 @@ class Desk(QMainWindow):
                 if self.client and hasattr(self.client, "reset_cancel"):
                     self.client.reset_cancel()
                 self.set_status("Read cancelled. No changes were sent to Steam.")
+                if achievement_read:
+                    self.achievement_read_state = "cancelled"
+                    self.render()
                 self.sync_controls()
                 return
             if error:
+                if achievement_read:
+                    self.achievement_read_state = "failed"
                 if uncertain:
+                    self.achievement_read_state = "unconfirmed"
                     self.record_outcome(dict(status="unconfirmed", message=error))
                     self.desired.clear()
                     self.draft_history.clear()
@@ -1005,8 +1024,12 @@ class Desk(QMainWindow):
                 try:
                     success(value)
                 except Exception as exc:
+                    if achievement_read:
+                        self.achievement_read_state = "failed"
                     self.set_status("Unable to display the result. Reload the game.")
                     self.show_problem(str(exc), uncertain=uncertain)
+            if achievement_read:
+                self.render()
             self.sync_controls()
         def execute():
             try:
@@ -1032,6 +1055,7 @@ class Desk(QMainWindow):
         if self.client:
             self.client.close()
         self.client = self.game = self.account_id = self.library_account_id = None
+        self.achievement_read_state, self.achievement_target = "idle", None
         self.completion_generation += 1
         self.completions.clear()
         self.achievement_set = None
@@ -1127,6 +1151,10 @@ class Desk(QMainWindow):
         self.close_details()
         self.draft_history.clear()
         self.show_achievements()
+        self.achievement_read_state, self.achievement_target = "loading", game
+        self.game_title.setText(game.name)
+        self.game_title.setToolTip(f"{game.name}\nApp ID {game.app_id}")
+        self.caption.setText("Reading achievement data from Steam…")
         self.achievement_set = None
         self.desired.clear()
         self.rows.clear()
@@ -1166,7 +1194,7 @@ class Desk(QMainWindow):
             self.filter_games()
             self.load_presentation()
             self.load_completion()
-        self.task(job, done, can_cancel=True, retry=lambda: self.connect(game))
+        self.task(job, done, can_cancel=True, retry=lambda: self.connect(game), achievement_read=True)
 
     def set_rows(self, reply):
         if reply["account_id"] != self.account_id:
@@ -1175,6 +1203,7 @@ class Desk(QMainWindow):
                 else self.view_state())
         self._restore_next_view = False
         self.rows = [Achievement(**row) for row in reply["achievements"]]
+        self.achievement_read_state, self.achievement_target = "loaded", None
         if self.game:
             self.save_compatibility(self.game.app_id, observe_read(self.game_compatibility(self.game.app_id), len(self.rows)))
             self.filter_games()
@@ -1273,12 +1302,27 @@ class Desk(QMainWindow):
             card.title.set_query(query)
             card.description.set_query(query)
         self.empty_panel.setVisible(not keys)
-        self.empty_title.setText("No matches found" if self.game and self.rows else
-                                 "No achievements to display" if self.game else "Choose your next milestone")
-        self.empty_hint.setText("Try another search, or clear filters to see all achievements." if self.game and self.rows else
-                                "Refresh achievements or choose another game." if self.game else "Select a game from your library.")
-        self.clear_filters_button.setVisible(bool(self.game and self.rows))
-        art = self.game_icon_pixmaps.get(self.game.app_id) if self.game else None
+        loading = self.achievement_read_state == "loading"
+        self.empty_loading.setVisible(loading and not keys)
+        if loading:
+            title, hint = "Loading achievements…", "Reading the selected game's achievement data from Steam."
+        elif self.rows:
+            title, hint = "No matches found", "Try another search, or clear filters to see all achievements."
+        elif self.achievement_read_state == "failed":
+            title, hint = "Achievements could not be loaded", "Check Steam and use Retry below, or choose another game."
+        elif self.achievement_read_state == "cancelled":
+            title, hint = "Achievement loading cancelled", "Select the game again when you are ready."
+        elif self.achievement_read_state == "unconfirmed":
+            title, hint = "Reload achievements to continue", "Check the result in Steam, then reopen the game."
+        elif self.achievement_read_state == "loaded":
+            title, hint = "No achievements returned", "Steam returned an empty achievement list. Choose another game."
+        else:
+            title, hint = "Choose your next milestone", "Select a game from your library."
+        self.empty_title.setText(title)
+        self.empty_hint.setText(hint)
+        self.clear_filters_button.setVisible(bool(self.rows) and not loading)
+        displayed_game = self.achievement_target or self.game
+        art = self.game_icon_pixmaps.get(displayed_game.app_id) if displayed_game else None
         self.hero_icon.setPixmap(art if art and not art.isNull() else icon("library", "#93c5ff", 32).pixmap(32, 32))
         if self.detail_key is not None:
             row = next((r for r in self.rows if r.key == self.detail_key), None)
@@ -1287,17 +1331,20 @@ class Desk(QMainWindow):
             else:
                 self.close_details()
         unlocked, total = sum(row.unlocked for row in self.rows), len(self.rows)
-        self.progress_text.setText(f"{unlocked} of {total} unlocked" if total else "No game selected" if not self.game else "No achievements")
+        self.progress_text.setText("Reading achievement states…" if loading and not total else
+                                   f"{unlocked} of {total} unlocked" if total else
+                                   "No achievements returned" if self.achievement_read_state == "loaded" else
+                                   "Achievement data unavailable" if displayed_game else "No game selected")
         self.percent.setText(f"{unlocked / total:.0%}" if total else "")
         self.progress.setValue(round(100 * unlocked / total) if total else 0)
-        self.result_count.setText(str(len(self.filtered)))
+        self.result_count.setText("…" if loading and not self.rows else str(len(self.filtered)))
         self.achievements_heading.setText("Achievements" + (" · " + group["name"] if group else ""))
         self.achievements_heading.setMaximumWidth(300)
         self.all_sets_button.setVisible(bool(group))
-        evidence = self.game_compatibility(self.game.app_id) if self.game else {}
-        self.compatibility_button.setText(compatibility_status(evidence)[0])
+        evidence = self.game_compatibility(displayed_game.app_id) if displayed_game else {}
+        self.compatibility_button.setText("Checking achievements…" if loading and not self.rows else compatibility_status(evidence)[0])
         self.compatibility_button.setToolTip(compatibility_details(evidence))
-        groups = self.current_completion().get("groups", [])
+        groups = [] if loading and not self.rows else self.current_completion().get("groups", [])
         completed = sum(g["completed"] is True for g in groups)
         unknown = sum(g["completed"] is None for g in groups)
         self.sets_button.setText((f"Sets & trophies · {len(groups)} sets" if unknown == len(groups) else f"Sets & trophies · {completed} completed") if groups else "Sets & trophies")
@@ -1372,7 +1419,7 @@ class Desk(QMainWindow):
         def done(reply):
             self.set_rows(reply)
             self.load_completion(force=True)
-        self.task(job, done, can_cancel=True, retry=self.refresh)
+        self.task(job, done, can_cancel=True, retry=self.refresh, achievement_read=True)
 
     def make_review_dialog(self):
         changes = plan_changes(self.rows, self.desired)
@@ -1439,6 +1486,7 @@ class Desk(QMainWindow):
         self.desired.clear()
         self.draft_history.clear()
         if result["status"] == "unconfirmed":
+            self.achievement_read_state = "unconfirmed"
             self.rows.clear()
             if self.client:
                 self.client.close()
