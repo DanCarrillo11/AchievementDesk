@@ -24,6 +24,13 @@ def run_gui(executable, output, environment=None):
         raise RuntimeError("The packaged GUI did not produce its offscreen render.")
 
 
+def verify_version(worker):
+    reported = subprocess.run([str(worker), "--version"], check=True, capture_output=True, text=True,
+                              timeout=20, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()
+    if reported != "Achievement Desk " + VERSION:
+        raise RuntimeError("The packaged runtime has a different version: " + reported)
+
+
 def check_installation(installer, previous=None):
     if os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_OS") != "Windows":
         raise RuntimeError("Installer checks run only on GitHub's disposable Windows runner.")
@@ -49,6 +56,8 @@ def check_installation(installer, previous=None):
                             "/LOG=" + str(ROOT / (".ci-artifacts/" + label + ".log"))],
                            check=True, timeout=120, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
             run_gui(destination / "AchievementDesk.exe", ROOT / (".ci-artifacts/" + label + ".png"), environment)
+            if label != "previous-install":
+                verify_version(destination / "AchievementDeskWorker.exe")
             verify_retained()
             print(label + " installed files: " + ", ".join(sorted(p.name for p in destination.iterdir())))
         def uninstall():
@@ -59,9 +68,11 @@ def check_installation(installer, previous=None):
             subprocess.run([str(uninstallers[-1]), "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"],
                            check=True, timeout=90, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
             deadline = time.monotonic() + 15
-            while (destination / "AchievementDesk.exe").exists() and time.monotonic() < deadline:
+            def remaining():
+                return any((destination / n).exists() for n in ("AchievementDesk.exe", "AchievementDeskWorker.exe", "_internal"))
+            while remaining() and time.monotonic() < deadline:
                 time.sleep(.2)
-            if any((destination / n).exists() for n in ("AchievementDesk.exe", "AchievementDeskWorker.exe", "_internal")):
+            if remaining():
                 raise RuntimeError("Uninstall left application runtime files behind.")
             verify_retained()
         if previous:
@@ -83,10 +94,7 @@ def main():
     worker = build / "AchievementDeskWorker.exe"
     if not worker.is_file():
         raise RuntimeError("Packaged worker is missing.")
-    reported = subprocess.run([str(worker), "--version"], check=True, capture_output=True, text=True,
-                              timeout=20, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()
-    if reported != "Achievement Desk " + VERSION:
-        raise RuntimeError("The packaged runtime has a different version: " + reported)
+    verify_version(worker)
     source_icon = (ROOT / "assets/app.ico").read_bytes()
     if hashlib.sha256((build / "_internal/assets/app.ico").read_bytes()).digest() != hashlib.sha256(source_icon).digest():
         raise RuntimeError("The bundled application icon differs from the source asset.")

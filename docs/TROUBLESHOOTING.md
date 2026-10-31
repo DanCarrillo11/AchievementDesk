@@ -57,10 +57,12 @@ on optional artwork requests.
 
 ## Portable or installation problems
 
-Public downloads have not been released yet. When available, extract the entire
-portable archive, keeping `AchievementDesk.exe`, `AchievementDeskWorker.exe` and
-`_internal/` together. The optional setup is a per-user install. See
-[release preparation](RELEASES.md) for source builds and current validation limits.
+Download setup or the portable ZIP from the official
+[releases page](https://github.com/DanCarrillo11/AchievementDesk/releases/latest).
+Extract the entire portable archive, keeping `AchievementDesk.exe`,
+`AchievementDeskWorker.exe` and `_internal/` together. Setup installs for the
+current user. Python is not required for either download. See
+[release preparation](RELEASES.md) for source builds and verification details.
 
 ## Reporting a problem
 
