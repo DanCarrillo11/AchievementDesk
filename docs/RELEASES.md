@@ -50,6 +50,10 @@ licenses. Source archives contain only approved project files.
 
 Existing published releases are never reuploaded or moved to another commit.
 Retries may replace files only in the same source commit's unpublished draft.
+An empty failed draft can be discarded only when its exact previous source SHA
+is explicitly named by `discard_empty_draft_from` in the reviewed request, it
+contains no assets, and its tag has not been created. Published releases and
+drafts containing downloads are never discarded by this recovery path.
 GitHub supplies source archives from the release tag; the two attached files are
 the end-user downloads. The notes contain their SHA-256 hashes. Build artifacts
 also retain the corresponding source ZIP and checksum file for 14 days.

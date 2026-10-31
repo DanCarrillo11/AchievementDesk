@@ -77,7 +77,7 @@ class ReleaseGuards(unittest.TestCase):
             gh.assert_not_called()
 
     def test_incomplete_uploaded_assets_stay_draft(self):
-        with self.environment(), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, dict(id=123, draft=True), dict(assets=[])]), patch.object(release, "gh") as gh:
+        with self.environment(), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [], dict(id=123, draft=True, target_commitish="b" * 40), dict(assets=[])]), patch.object(release, "gh") as gh:
             with self.assertRaisesRegex(RuntimeError, "intended release assets"):
                 release.publish(self.folder)
             self.assertFalse(any(call.args[:2] == ("release", "edit") for call in gh.call_args_list))
@@ -87,7 +87,7 @@ class ReleaseGuards(unittest.TestCase):
         names = [release.asset_names()[0], release.asset_names()[2]]
         assets = [dict(name=n, size=(self.folder / n).stat().st_size, state="uploaded",
                        digest="sha256:" + release.digest(self.folder / n)) for n in names]
-        responses = [None, None, dict(id=123, draft=True), dict(assets=assets),
+        responses = [None, None, [], dict(id=123, draft=True, target_commitish="b" * 40), dict(assets=assets),
                      dict(draft=False, prerelease=False, html_url="https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.0.0")]
         with self.environment(), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=responses), patch.object(release, "gh") as gh, patch("builtins.print"):
             release.publish(self.folder)
@@ -102,10 +102,39 @@ class ReleaseGuards(unittest.TestCase):
         self.files()
         assets = [dict(name=n, size=(self.folder / n).stat().st_size, state="uploaded", digest="sha256:" + "0" * 64)
                   for n in (release.asset_names()[0], release.asset_names()[2])]
-        with self.environment(), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, dict(id=123), dict(assets=assets)]), patch.object(release, "gh") as gh:
+        with self.environment(), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [], dict(id=123, draft=True, target_commitish="b" * 40), dict(assets=assets)]), patch.object(release, "gh") as gh:
             with self.assertRaisesRegex(RuntimeError, "checksum"):
                 release.publish(self.folder)
         self.assertFalse(any(c.args[:2] == ("release", "edit") for c in gh.call_args_list))
+
+    def test_pending_draft_is_reused_without_a_tag_lookup_after_creation(self):
+        draft = dict(id=123, tag_name="v1.0.0", draft=True, target_commitish="b" * 40, assets=[])
+        with self.environment(), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [draft], dict(assets=[])]) as api, patch.object(release, "gh"):
+            with self.assertRaisesRegex(RuntimeError, "intended release assets"):
+                release.publish(self.folder)
+        self.assertFalse(any(c.kwargs.get("payload") for c in api.call_args_list))
+
+    def test_explicit_recovery_discards_only_an_empty_untagged_draft(self):
+        value, notes = release.request()
+        value["discard_empty_draft_from"] = "a" * 40
+        old = dict(id=100, tag_name=value["tag"], draft=True, target_commitish="a" * 40, assets=[])
+        created = dict(id=123, draft=True, target_commitish="b" * 40)
+        with self.environment(), patch.object(release, "request", return_value=(value, notes)), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [old], created, dict(assets=[])]) as api, patch.object(release, "gh") as gh:
+            with self.assertRaisesRegex(RuntimeError, "intended release assets"):
+                release.publish(self.folder)
+        gh.assert_any_call("api", "--method", "DELETE", "repos/DanCarrillo11/AchievementDesk/releases/100")
+        payload = next(c.kwargs["payload"] for c in api.call_args_list if "payload" in c.kwargs)
+        self.assertTrue(payload["draft"])
+        self.assertEqual(payload["target_commitish"], "b" * 40)
+
+    def test_a_draft_with_downloads_cannot_be_discarded(self):
+        value, notes = release.request()
+        value["discard_empty_draft_from"] = "a" * 40
+        old = dict(id=100, tag_name=value["tag"], draft=True, target_commitish="a" * 40, assets=[dict(name="keep.exe")])
+        with self.environment(), patch.object(release, "request", return_value=(value, notes)), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [old]]), patch.object(release, "gh") as gh:
+            with self.assertRaisesRegex(RuntimeError, "another commit"):
+                release.publish(self.folder)
+        gh.assert_not_called()
 
     def test_installer_smoke_cannot_run_on_the_users_desktop(self):
         from tools.verify_packaged import check_installation
