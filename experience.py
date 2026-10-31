@@ -3,6 +3,27 @@ SORTS = ("Steam order", "Name A–Z", "Name Z–A", "Newest unlocks", "Oldest un
 FILTERS = ("All", "Locked", "Unlocked", "Pending")
 
 
+def page_numbers(current, total):
+    """Bounded, zero-based page links with non-interactive gaps."""
+    if total <= 0:
+        return []
+    current = max(0, min(current, total - 1))
+    if total <= 9:
+        return list(range(total))
+    nearby = set(range(max(0, current - 2), min(total, current + 3)))
+    if current < 3:
+        nearby.update(range(5))
+    if current >= total - 3:
+        nearby.update(range(total - 5, total))
+    ordered = sorted(nearby | {0, total - 1})
+    result = []
+    for number in ordered:
+        if result and number - result[-1] > 1:
+            result.append(number - 1 if number - result[-1] == 2 else None)
+        result.append(number)
+    return result
+
+
 def match_ranges(text, query):
     """Return literal case-insensitive matches as Python character offsets."""
     if not query:

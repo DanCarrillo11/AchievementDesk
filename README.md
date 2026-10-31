@@ -18,11 +18,11 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**1.1.0** is the current stable release for Windows x64.
+**1.2.0** is the current stable release for Windows x64.
 
-- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.1.0/AchievementDesk-1.1.0-Setup.exe)
-- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.1.0/AchievementDesk-1.1.0-Portable.zip)
-- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.1.0)
+- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.2.0/AchievementDesk-1.2.0-Setup.exe)
+- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.2.0/AchievementDesk-1.2.0-Portable.zip)
+- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.2.0)
 
 The downloads include the runtime; Python is only needed for development.
 Live operations require an online, signed-in Steam desktop client. No Steam
@@ -31,7 +31,7 @@ password or API key is requested.
 ## Features
 
 - **Your library, in one window.** Search by title or App ID, browse with A–Z
-  filters and 100-game pages, and keep favorites and recent games per account.
+  filters, numbered navigation and 100-game pages, and keep favorites and recent games per account.
   Accessible games can appear even when they are not installed.
 - **Fast repeat launches.** After the first complete Steam library discovery, an
   account-specific snapshot loads on later launches once the signed-in Steam
@@ -62,6 +62,12 @@ password or API key is requested.
 ![Literal search highlights](docs/screenshots/search.png)
 
 ![Embedded alphabetical library](docs/screenshots/library.png)
+
+![Numbered page navigation](docs/screenshots/library-pages.png)
+
+*The numbered-page example uses a synthetic game list to demonstrate long page ranges.*
+
+![Achievement loading state](docs/screenshots/loading.png)
 
 ![Achievement sets and reported completion](docs/screenshots/sets-trophies.png)
 
@@ -108,7 +114,7 @@ achievement helper is connected; the manager does not launch the game executable
 Automated Windows checks cover drafts, reviewed writes, account isolation,
 partial/unknown outcomes, library caching, artwork recovery and update selection.
 The release workflow also checks the frozen helper and offscreen interface,
-clean installation, upgrade from 1.0.0, retained local data and uninstall
+clean installation, upgrade from 1.1.0, retained local data and uninstall
 before publication. These synthetic checks do not modify a Steam account.
 
 The owner reports successful use with their tested games. One independently
