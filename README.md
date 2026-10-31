@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/app.png" width="76" alt="Achievement Desk icon">
+  <img src="assets/logo-transparent.png" width="76" alt="Achievement Desk icon">
   <h1>Achievement Desk</h1>
   <p>A focused desktop workspace for your Steam achievements.</p>
   <p><strong>Windows x64 · Stable release · English interface</strong></p>
