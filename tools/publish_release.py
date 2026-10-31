@@ -87,8 +87,8 @@ def verify_assets(folder):
     return rows
 
 
-def gh(*args, missing_ok=False):
-    result = subprocess.run(["gh", *args], capture_output=True, text=True, encoding="utf-8")
+def gh(*args, missing_ok=False, input_text=None):
+    result = subprocess.run(["gh", *args], capture_output=True, text=True, encoding="utf-8", input=input_text)
     if result.returncode:
         if missing_ok and "404" in result.stderr:
             return None
@@ -96,8 +96,11 @@ def gh(*args, missing_ok=False):
     return result.stdout
 
 
-def api(path, missing_ok=False):
-    data = gh("api", path, missing_ok=missing_ok)
+def api(path, missing_ok=False, payload=None):
+    args = ["api", path]
+    if payload is not None:
+        args += ["--method", "POST", "--input", "-"]
+    data = gh(*args, missing_ok=missing_ok, input_text=json.dumps(payload) if payload is not None else None)
     return json.loads(data) if data is not None else None
 
 
@@ -123,19 +126,30 @@ def publish(folder):
     if reference and (reference["object"]["type"] != "commit" or reference["object"]["sha"] != commit):
         raise RuntimeError("An existing tag points elsewhere; it will not be moved.")
     release = api(base + "/releases/tags/" + tag, missing_ok=True)
-    if release:
-        if release.get("target_commitish") != commit:
+    if release is None:
+        # REST's tag endpoint only finds published releases. Drafts have pending tags.
+        candidates = [r for r in api(base + "/releases?per_page=100") if r.get("tag_name") == tag]
+        if len(candidates) > 1:
+            raise RuntimeError("Multiple releases use this pending tag; resolve the ambiguity first.")
+        release = candidates[0] if candidates else None
+    if release and release.get("target_commitish") != commit:
+        # A previous failed attempt may leave an empty unpublished draft. Discard
+        # only the exact source explicitly named by the reviewed release request.
+        if (release.get("draft") is True and release.get("assets") == [] and reference is None
+                and release.get("target_commitish") == value.get("discard_empty_draft_from")):
+            gh("api", "--method", "DELETE", base + "/releases/" + str(int(release["id"])))
+            release = None
+        else:
             raise RuntimeError("An existing release targets another commit; it will not be changed.")
+    if release:
         if not release.get("draft"):
             print("This exact commit is already published: " + release["html_url"])
             return
     else:
-        args = ["release", "create", tag, "--repo", repo, "--target", commit,
-                "--title", "Achievement Desk " + VERSION, "--notes-file", str(prepared_notes), "--draft"]
-        if value["prerelease"]:
-            args.append("--prerelease")
-        gh(*args)
-        release = api(base + "/releases/tags/" + tag)
+        release = api(base + "/releases", payload=dict(tag_name=tag, target_commitish=commit,
+                      name="Achievement Desk " + VERSION, body=body, draft=True, prerelease=value["prerelease"]))
+        if release.get("draft") is not True or release.get("target_commitish") != commit:
+            raise RuntimeError("GitHub did not create the expected source-bound draft.")
     # Replacing files is limited to an unpublished draft, supporting safe retries.
     gh("release", "upload", tag, "--repo", repo, "--clobber", *[str(folder / n) for n in names])
     uploaded = api(base + "/releases/" + str(release["id"]))
