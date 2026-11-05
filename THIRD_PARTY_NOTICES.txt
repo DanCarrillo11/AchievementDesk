@@ -1,4 +1,4 @@
-Achievement Desk contains an altered Python adaptation of the Steam connection
+SteamAchievementManager contains an altered Python adaptation of the Steam connection
 approach and versioned interface layouts from Steam Achievement Manager / SAM.API.
 Upstream: https://github.com/gibbed/SteamAchievementManager
 This project is not the original SAM and is not affiliated with its author.
@@ -27,7 +27,7 @@ freely, subject to the following restrictions:
    distribution.
 
 Steam and Steamworks are trademarks of Valve Corporation. No Valve binaries
-are distributed with Achievement Desk. Python/Tcl/Tk runtime notices are
+are distributed with SteamAchievementManager. Python/Tcl/Tk runtime notices are
 retained in the packaged runtime. PyInstaller's bootloader has a distribution
 exception permitting distribution of the resulting application.
 

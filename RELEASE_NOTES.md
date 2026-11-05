@@ -1,42 +1,35 @@
-# Achievement Desk 1.2.0 — Clear loading and numbered pages
+# SteamAchievementManager 1.3.0
 
-## Fixed achievement loading
+Achievement Desk is now named **SteamAchievementManager**. The window, Settings,
+executable, worker, installer and shortcuts use the new name.
 
-Opening a game now shows **Loading achievements…** with an indeterminate progress
-indicator and the selected game name. Pending, cancelled and failed reads are
-separate from a successful empty response. **No achievements returned** appears
-only when Steam finishes a successful read with no achievements. Unknown apply
-results ask for a reload rather than presenting a false empty game.
+## Library refresh
 
-Refreshing an already loaded game keeps its rows visible and disables switches
-until the operation finishes. Actions for a previously open game stay disabled
-while a different game is being read.
+A blue circular-arrow button beside **All games** rereads the Steam library to
+discover newly added or removed games and update installation status. It uses
+the existing full-refresh action, including draft confirmation and busy-state
+handling. **Library tools → Refresh library** remains available.
 
-## Numbered game-library pages
+## Downloads
 
-- Jump directly to a page inside the current letter, search and library filter.
-- The current page is highlighted. First/last pages and nearby numbers stay
-  visible; ellipses keep long ranges compact.
-- Previous/Next navigation and the range/page count remain available.
-- Each page still contains up to 100 games. Searching/filtering recalculates the
-  page numbers and starts at page 1; browsing preserves pending achievement drafts.
+- **SteamAchievementManager-1.3.0-Setup.exe** installs for the current Windows user.
+- **SteamAchievementManager-1.3.0-Portable.zip** contains the complete application.
+  Extract it into a fresh folder and run **SteamAchievementManager.exe**, keeping
+  **SteamAchievementManagerWorker.exe** and `_internal` beside it.
 
-## Downloads and upgrade
+## Upgrade from Achievement Desk
 
-- **AchievementDesk-1.2.0-Setup.exe** — per-user Windows x64 installer.
-- **AchievementDesk-1.2.0-Portable.zip** — extract the complete folder and run
-  AchievementDesk.exe; keep its helper and `_internal` folder together.
+Close the previous application and run the new installer. It uses the existing
+installation identity, replaces the old executable names and creates renamed
+shortcuts. Existing preferences, favorites, activity history, reference snapshots
+and library cache stay under `%LOCALAPPDATA%\AchievementDesk`.
 
-Close the previous app before upgrading. Setup can update the existing install;
-portable users should extract into a fresh folder. Local preferences, favorites,
-history and library cache stay in the same data folder. Python is not required.
+The official repository and update channel remain
+`DanCarrillo11/AchievementDesk`. Stable installations can discover this release
+through their existing update settings.
 
-Automated checks cover slow/failed/cancelled reads, real empty responses, unknown
-outcomes, filtered page jumps and small-window layouts. The release workflow also
-checks frozen startup, clean installation, upgrade from checksum-pinned 1.1.0,
-retained local data and uninstallation. These checks use synthetic data and do
-not change a live Steam account.
-
-Existing compatibility limits apply: protected/server-controlled achievements
-can reject writes, and Steam controls completion trophies. Reference snapshots
-cannot restore historical dates or trophy history. Binaries are unsigned.
+Release checks cover the renamed frozen application and worker, synthetic
+library/achievement operations, minimum-size layouts, clean installation and
+upgrade from checksum-pinned Achievement Desk 1.2.0 on a disposable Windows
+runner. The release includes the existing loading states, numbered library pages,
+reviewed achievement changes, completion information and documented game limits.

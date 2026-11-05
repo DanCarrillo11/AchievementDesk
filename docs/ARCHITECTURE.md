@@ -1,6 +1,6 @@
 # Architecture
 
-Achievement Desk is a Python/PySide6 Windows desktop application. Runtime
+SteamAchievementManager is a Python/PySide6 Windows desktop application. Runtime
 dependencies are pinned in `requirements.txt`; the native adapter uses the
 standard library and the user's installed Steam client.
 

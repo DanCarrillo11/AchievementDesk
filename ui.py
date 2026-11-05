@@ -14,6 +14,7 @@ from library import Game
 from transport import GameClient, WorkerClient
 from catalog import update_catalog
 from widgets import AchievementList
+from workspace import APP_NAME, VERSION
 
 BG, PANEL, INK, MUTED, ACCENT = "#101923", "#1b2838", "#e5edf5", "#9aafc3", "#66c0f4"
 
@@ -23,7 +24,7 @@ class Desk(tk.Tk):
         super().__init__()
         if hidden:
             self.withdraw()  # Automated construction tests must never show a window.
-        self.title("Achievement Desk — 0.3.0 Preview")
+        self.title(f"{APP_NAME} — {VERSION}")
         self.geometry("1180x790")
         self.minsize(1040, 720)
         self.configure(bg=BG)

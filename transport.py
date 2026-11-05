@@ -6,14 +6,16 @@ import sys
 import threading
 import time
 
+from workspace import APP_NAME
+
 
 class WorkerClient:
     def __init__(self, app_id, demo=False, library=False, refresh_library=False):
         args = [sys.executable]
         if getattr(sys, "frozen", False):
-            worker = Path(sys.executable).with_name("AchievementDeskWorker.exe")
+            worker = Path(sys.executable).with_name(APP_NAME + "Worker.exe")
             if not worker.is_file():
-                raise RuntimeError("AchievementDeskWorker.exe is missing. Extract the complete portable folder.")
+                raise RuntimeError(APP_NAME + "Worker.exe is missing. Extract the complete portable folder.")
             args = [str(worker)]
         else:
             args += ["-u", str(Path(__file__).with_name("app.py"))]

@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from workspace import VERSION
+from workspace import APP_NAME, VERSION
 
 
 def run_gui(executable, output, environment=None):
@@ -27,7 +27,7 @@ def run_gui(executable, output, environment=None):
 def verify_version(worker):
     reported = subprocess.run([str(worker), "--version"], check=True, capture_output=True, text=True,
                               timeout=20, creationflags=subprocess.CREATE_NO_WINDOW).stdout.strip()
-    if reported != "Achievement Desk " + VERSION:
+    if reported != APP_NAME + " " + VERSION:
         raise RuntimeError("The packaged runtime has a different version: " + reported)
 
 
@@ -55,9 +55,12 @@ def check_installation(installer, previous=None):
                             "/DIR=" + str(destination), "/GROUP=Achievement Desk Release Smoke", "/TASKS=",
                             "/LOG=" + str(ROOT / (".ci-artifacts/" + label + ".log"))],
                            check=True, timeout=120, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
-            run_gui(destination / "AchievementDesk.exe", ROOT / (".ci-artifacts/" + label + ".png"), environment)
+            executable = "AchievementDesk.exe" if label == "previous-install" else APP_NAME + ".exe"
+            run_gui(destination / executable, ROOT / (".ci-artifacts/" + label + ".png"), environment)
             if label != "previous-install":
-                verify_version(destination / "AchievementDeskWorker.exe")
+                verify_version(destination / (APP_NAME + "Worker.exe"))
+                if any((destination / name).exists() for name in ("AchievementDesk.exe", "AchievementDeskWorker.exe")):
+                    raise RuntimeError("Upgrade left legacy application launchers behind.")
             verify_retained()
             print(label + " installed files: " + ", ".join(sorted(p.name for p in destination.iterdir())))
         def uninstall():
@@ -69,7 +72,7 @@ def check_installation(installer, previous=None):
                            check=True, timeout=90, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
             deadline = time.monotonic() + 15
             def remaining():
-                return any((destination / n).exists() for n in ("AchievementDesk.exe", "AchievementDeskWorker.exe", "_internal"))
+                return any((destination / n).exists() for n in (APP_NAME + ".exe", APP_NAME + "Worker.exe", "AchievementDesk.exe", "AchievementDeskWorker.exe", "_internal"))
             while remaining() and time.monotonic() < deadline:
                 time.sleep(.2)
             if remaining():
@@ -91,7 +94,7 @@ def main():
     parser.add_argument("--previous-installer", type=Path)
     args = parser.parse_args()
     build = args.build.resolve()
-    worker = build / "AchievementDeskWorker.exe"
+    worker = build / (APP_NAME + "Worker.exe")
     if not worker.is_file():
         raise RuntimeError("Packaged worker is missing.")
     verify_version(worker)
@@ -102,7 +105,7 @@ def main():
         suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"), pattern="test_transport.py")
         if not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful():
             raise RuntimeError("Packaged synthetic-worker checks failed.")
-    run_gui(build / "AchievementDesk.exe", ROOT / ".ci-artifacts/packaged-demo.png")
+    run_gui(build / (APP_NAME + ".exe"), ROOT / ".ci-artifacts/packaged-demo.png")
     if args.installer:
         check_installation(args.installer.resolve(), args.previous_installer.resolve() if args.previous_installer else None)
     print("Packaged synthetic checks passed; no native Steam account operation was used.")

@@ -25,7 +25,7 @@ from library import Game
 from transport import GameClient, WorkerClient
 from catalog import update_catalog
 
-from workspace import Workspace, VERSION, order_achievements
+from workspace import Workspace, APP_NAME, VERSION, order_achievements
 from media import Media
 from library_view import LibraryPage, history_dialog
 from completion import CompletionService, unlock_restriction
@@ -109,7 +109,7 @@ class Desk(QMainWindow):
         self.completion_requests = {}
         self.completion_service = CompletionService(self.callbacks.put)
         self.media = Media(self.data_dir / "public-cache", self.callbacks.put, enabled=not demo and self.workspace.settings["online_art"])
-        self.setWindowTitle(f"Achievement Desk — {VERSION}")
+        self.setWindowTitle(f"{APP_NAME} — {VERSION}")
         self.setWindowIcon(QIcon(str(Path(__file__).with_name("assets") / "app.ico")))
         self.resize(self.workspace.settings["width"], self.workspace.settings["height"])
         self.setMinimumSize(1020, 760)
@@ -206,7 +206,7 @@ class Desk(QMainWindow):
         header_layout.addWidget(emblem)
         brand_copy = QVBoxLayout()
         brand_copy.setSpacing(2)
-        brand_copy.addWidget(label("Achievement Desk", "Brand"))
+        brand_copy.addWidget(label(APP_NAME, "Brand"))
         brand_copy.addWidget(label("Your games. Your progress. Every achievement.", "BrandSub"))
         header_layout.addLayout(brand_copy)
         header_layout.addStretch()
@@ -252,7 +252,12 @@ class Desk(QMainWindow):
         left.addWidget(self.game_search)
         self.library_filter_button = self.menu_button(self.library_filter, "down", self.library_menu, True)
         self.library_filter_button.setToolTip("Filter library")
-        left.addWidget(self.library_filter_button)
+        self.library_filter_button.setIconSize(QSize(14, 14))
+        self.library_filter_button.setStyleSheet("padding: 10px 0;")
+        library_filters = QHBoxLayout()
+        library_filters.setSpacing(6)
+        library_filters.addWidget(self.library_filter_button, 1, Qt.AlignmentFlag.AlignLeft)
+        left.addLayout(library_filters)
         self.games = QListWidget()
         self.games.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.games.setItemDelegate(GameDelegate(self.games))
@@ -262,6 +267,14 @@ class Desk(QMainWindow):
         left.addWidget(self.games, 1)
         self.library_tools_menu = QMenu(self)
         self.refresh_library_action = self.action(self.library_tools_menu, "Refresh library", lambda checked=False: self.load_library(force=True))
+        self.refresh_library_action.setIcon(icon("refresh", "#93c5ff"))
+        self.refresh_library_action.setToolTip("Refresh library from Steam to find new games and update installation status")
+        self.refresh_library_button = self.tool("refresh", "Refresh library")
+        self.refresh_library_button.setDefaultAction(self.refresh_library_action)
+        self.refresh_library_button.setObjectName("LibraryRefresh")
+        self.refresh_library_button.setFixedSize(36, 36)
+        self.refresh_library_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        library_filters.addWidget(self.refresh_library_button)
         self.add_id_action = self.action(self.library_tools_menu, "Open game by App ID…", self.open_id)
         self.library_tools_menu.addSeparator()
         self.catalog_action = self.action(self.library_tools_menu, "Update game catalog", self.refresh_catalog)
@@ -1676,7 +1689,7 @@ class Desk(QMainWindow):
         layout.addStretch()
         layout.addWidget(self.rule())
         footer = QHBoxLayout()
-        footer.addWidget(label(f"Achievement Desk  /  {VERSION}", "Small"), 1)
+        footer.addWidget(label(f"{APP_NAME}  /  {VERSION}", "Small"), 1)
         about = button("About", self.about)
         footer.addWidget(about)
         footer.addWidget(button("Shortcuts", self.shortcuts))
@@ -1694,7 +1707,7 @@ class Desk(QMainWindow):
         dialog.deleteLater()
 
     def about(self):
-        QMessageBox.information(self, "Achievement Desk", f"Achievement Desk {VERSION}\n\nIndependent Steam achievement manager.\nRead Steam's achievement sets and reported completion; prepare remaining set unlocks for review.\nCompatibility is based on local evidence for this account.\nSteam controls trophy awards and persistence.\n\nNo password or API key is required.")
+        QMessageBox.information(self, APP_NAME, f"{APP_NAME} {VERSION}\n\nIndependent Steam achievement manager.\nRead Steam's achievement sets and reported completion; prepare remaining set unlocks for review.\nCompatibility is based on local evidence for this account.\nSteam controls trophy awards and persistence.\n\nNo password or API key is required.")
 
     def closeEvent(self, event):
         if self.busy:
@@ -1722,7 +1735,7 @@ def launch(demo=False):
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("DanCarrillo11.AchievementDesk")
     app = QApplication.instance() or QApplication(sys.argv)
     app.setStyle("Fusion")
-    app.setApplicationName("Achievement Desk")
+    app.setApplicationName(APP_NAME)
     window = Desk(demo=demo)
     window.show()
     app.exec()

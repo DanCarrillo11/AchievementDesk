@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 — 2026-11-05
+
+- Rename the application to SteamAchievementManager across the interface, Windows
+  executables, installer, shortcuts and release downloads.
+- Add a visible Refresh library control beside All games, sharing the existing
+  full-discovery action and busy-state safeguards.
+- Preserve existing preferences, favorites, history and library snapshots in the
+  established local data directory when upgrading from Achievement Desk.
+- Verify upgrade from the published 1.2.0 installer, including removal of legacy
+  executable names and startup through the renamed worker.
+
 ## 1.2.0 — 2026-10-30
 
 - Display an explicit achievement loading state and indeterminate indicator instead of a false empty result.

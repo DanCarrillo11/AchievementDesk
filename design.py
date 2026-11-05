@@ -43,6 +43,10 @@ QPushButton#SidebarButton, QToolButton#SidebarButton { text-align: left; border:
 QPushButton#SidebarButton:hover, QToolButton#SidebarButton:hover { background: #353538; color: #f5f5f7; }
 QToolButton { background: transparent; border: none; border-radius: 4px; padding: 6px; }
 QToolButton:hover { background: #353538; }
+QToolButton#LibraryRefresh { background: #193856; border: 1px solid #36516b; border-radius: 9px; padding: 6px; }
+QToolButton#LibraryRefresh:hover { background: #25486a; border-color: #93c5ff; }
+QToolButton#LibraryRefresh:focus { border-color: #93c5ff; }
+QToolButton#LibraryRefresh:disabled { background: #28282c; border-color: #28282c; }
 QToolButton::menu-indicator { image: none; width: 0px; height: 0px; }
 QWidget#Segments { background: transparent; }
 QPushButton#Segment { border: 1px solid transparent; background: #242426; padding: 9px 13px; color: #b6b6be; border-radius: 9px; font-size: 12px; }
@@ -190,6 +194,10 @@ def icon(kind, color="#9ba5b4", size=20):
         painter.drawLine(3, 7, 7, 11)
         painter.drawLine(3, 7, 12, 7)
         painter.drawArc(QRectF(8, 7, 8, 8), -90 * 16, 180 * 16)
+    elif kind == "refresh":
+        painter.drawArc(QRectF(4, 4, 12, 12), 45 * 16, 285 * 16)
+        painter.drawLine(13, 3, 16, 6)
+        painter.drawLine(16, 6, 12, 7)
     elif kind == "lock":
         painter.drawRoundedRect(QRectF(4, 9, 12, 9), 2, 2)
         painter.drawArc(QRectF(6, 2, 8, 12), 0, 180 * 16)

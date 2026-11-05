@@ -12,7 +12,7 @@ frozen application, exercises its synthetic helper and offscreen interface (incl
 compiles the installer with the runner's Inno Setup console compiler.
 
 On the disposable Windows runner it silently installs the checksum-pinned
-1.1.0, upgrades to the candidate, verifies startup and retained synthetic
+1.2.0, upgrades to the candidate, verifies startup and retained synthetic
 local data, uninstalls, and then checks a clean install/uninstall. No native
 Steam session is used. Installer checks refuse to run outside Windows Actions.
 
@@ -21,11 +21,11 @@ To reproduce the portable build locally with Windows x64 and Python 3.11+:
 ```powershell
 python -m pip install -r requirements-build.txt
 python -m unittest discover -s tests -v
-python -m PyInstaller --clean --noconfirm AchievementDesk.spec
-python tools/verify_packaged.py dist/AchievementDesk
-python tools/package_release.py dist/AchievementDesk release
+python -m PyInstaller --clean --noconfirm SteamAchievementManager.spec
+python tools/verify_packaged.py dist/SteamAchievementManager
+python tools/package_release.py dist/SteamAchievementManager release
 $releaseRoot = (Resolve-Path release).Path
-$portableFolder = Join-Path $releaseRoot 'AchievementDesk-1.2.0-Portable'
+$portableFolder = Join-Path $releaseRoot 'SteamAchievementManager-1.3.0-Portable'
 ISCC.exe "/DBuildSource=$portableFolder" "/DOutputFolder=$releaseRoot" installer.iss
 python tools/publish_release.py checksums release
 ```
@@ -65,7 +65,7 @@ to it without replacing a custom repository. Update checks run only on request
 and open a GitHub release page. They never download or execute an installer.
 Stable installations ignore previews by both tag and GitHub prerelease status.
 
-Close Achievement Desk before upgrading with setup. Portable users should extract
+Close SteamAchievementManager before upgrading with setup. Portable users should extract
 into a new folder. Both distributions use `%LOCALAPPDATA%/AchievementDesk` for
 preferences, favorites, history, library cache and reference snapshots. Uninstall
 retains that folder. See the [1.0 release scope](validation/stable-1.0.0.md) for

@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in Achievement Desk.
+description: Report a reproducible problem in SteamAchievementManager.
 labels: []
 body:
   - type: markdown
