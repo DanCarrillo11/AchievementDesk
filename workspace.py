@@ -8,7 +8,7 @@ from experience import clean_view
 
 VERSION = "1.3.0"
 APP_NAME = "SteamAchievementManager"
-RELEASE_REPOSITORY = "DanCarrillo11/AchievementDesk"
+RELEASE_REPOSITORY = "DanCarrillo11/SteamAchievementManager"
 DEFAULTS = dict(reveal_hidden=False, compact=False, reduce_motion=False, online_art=True,
                 achievement_sort="Steam order", library_filter="All games", width=1280, height=900,
                 release_repository=RELEASE_REPOSITORY, online_completion=True)

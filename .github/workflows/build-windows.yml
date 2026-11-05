@@ -60,7 +60,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force .ci-artifacts | Out-Null
           $previous = Join-Path (Resolve-Path .ci-artifacts).Path 'previous-Setup.exe'
-          Invoke-WebRequest 'https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.2.0/AchievementDesk-1.2.0-Setup.exe' -OutFile $previous
+          Invoke-WebRequest 'https://github.com/DanCarrillo11/SteamAchievementManager/releases/download/v1.2.0/AchievementDesk-1.2.0-Setup.exe' -OutFile $previous
           $expected = 'ef5c0507771ed7fe9d8a3228365d62f1cdba2925207fc13afb1449ce6bbfd0bf'
           if ((Get-FileHash -LiteralPath $previous -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Previous installer checksum mismatch.' }
           python tools/verify_packaged.py "release/SteamAchievementManager-$env:APP_VERSION-Portable" --installer "release/SteamAchievementManager-$env:APP_VERSION-Setup.exe" --previous-installer $previous

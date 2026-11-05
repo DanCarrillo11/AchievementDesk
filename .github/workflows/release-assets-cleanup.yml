@@ -1,4 +1,4 @@
-name: Maintain Achievement Desk release downloads
+name: Maintain SteamAchievementManager release downloads
 
 # Apply an explicitly requested release-asset rename on main.
 on:

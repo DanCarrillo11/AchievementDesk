@@ -58,14 +58,14 @@ class ReleaseGuards(unittest.TestCase):
             release.verify_assets(self.folder)
 
     def environment(self):
-        return patch.dict(os.environ, GITHUB_REPOSITORY="DanCarrillo11/AchievementDesk", GITHUB_REF="refs/heads/main", GITHUB_SHA="b" * 40)
+        return patch.dict(os.environ, GITHUB_REPOSITORY="DanCarrillo11/SteamAchievementManager", GITHUB_REF="refs/heads/main", GITHUB_SHA="b" * 40)
 
     def hashes(self):
         return {name: "a" * 64 for name in release.asset_names()}
 
     def test_published_release_is_never_reuploaded(self):
         value, notes = release.request()
-        existing = dict(target_commitish="b" * 40, draft=False, html_url="https://github.com/DanCarrillo11/AchievementDesk/releases/tag/" + value["tag"])
+        existing = dict(target_commitish="b" * 40, draft=False, html_url="https://github.com/DanCarrillo11/SteamAchievementManager/releases/tag/" + value["tag"])
         with self.environment(), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, existing]), patch.object(release, "gh") as gh, patch("builtins.print"):
             release.publish(self.folder)
             gh.assert_not_called()
@@ -88,7 +88,7 @@ class ReleaseGuards(unittest.TestCase):
         assets = [dict(name=n, size=(self.folder / n).stat().st_size, state="uploaded",
                        digest="sha256:" + release.digest(self.folder / n)) for n in names]
         responses = [None, None, [], dict(id=123, draft=True, target_commitish="b" * 40), dict(assets=assets),
-                     dict(draft=False, prerelease=False, html_url="https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v" + release.VERSION)]
+                     dict(draft=False, prerelease=False, html_url="https://github.com/DanCarrillo11/SteamAchievementManager/releases/tag/v" + release.VERSION)]
         with self.environment(), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=responses), patch.object(release, "gh") as gh, patch("builtins.print"):
             release.publish(self.folder)
         edit = next(c.args for c in gh.call_args_list if c.args[:2] == ("release", "edit"))
@@ -122,7 +122,7 @@ class ReleaseGuards(unittest.TestCase):
         with self.environment(), patch.object(release, "request", return_value=(value, notes)), patch.object(release, "verify_assets", return_value=self.hashes()), patch.object(release.subprocess, "check_output", return_value="b" * 40), patch.object(release, "api", side_effect=[None, None, [old], created, dict(assets=[])]) as api, patch.object(release, "gh") as gh:
             with self.assertRaisesRegex(RuntimeError, "intended release assets"):
                 release.publish(self.folder)
-        gh.assert_any_call("api", "--method", "DELETE", "repos/DanCarrillo11/AchievementDesk/releases/100")
+        gh.assert_any_call("api", "--method", "DELETE", "repos/DanCarrillo11/SteamAchievementManager/releases/100")
         payload = next(c.kwargs["payload"] for c in api.call_args_list if "payload" in c.kwargs)
         self.assertTrue(payload["draft"])
         self.assertEqual(payload["target_commitish"], "b" * 40)

@@ -38,7 +38,7 @@ class WorkspaceTests(unittest.TestCase):
     def test_old_empty_update_channel_migrates_without_losing_preferences(self):
         atomic_json(self.root / "workspace.json", dict(settings=dict(release_repository="", compact=True)))
         loaded = Workspace(self.root)
-        self.assertEqual(loaded.settings["release_repository"], "DanCarrillo11/AchievementDesk")
+        self.assertEqual(loaded.settings["release_repository"], "DanCarrillo11/SteamAchievementManager")
         self.assertTrue(loaded.settings["compact"])
 
     def test_custom_update_repository_is_preserved(self):

@@ -1,6 +1,6 @@
 # Releases
 
-The official repository is https://github.com/DanCarrillo11/AchievementDesk.
+The official repository is https://github.com/DanCarrillo11/SteamAchievementManager.
 Version 1.0.0 starts the stable release line. Application, executable, installer
 and `release-request.json` versions must agree.
 
@@ -60,8 +60,9 @@ also retain the corresponding source ZIP and checksum file for 14 days.
 
 ## Updates and upgrades
 
-Settings defaults to `DanCarrillo11/AchievementDesk`; older empty channels migrate
-to it without replacing a custom repository. Update checks run only on request
+Settings defaults to `DanCarrillo11/SteamAchievementManager`; older empty channels migrate
+to it without replacing a custom repository. Existing saved AchievementDesk
+channels continue to work through GitHub's repository redirect. Update checks run only on request
 and open a GitHub release page. They never download or execute an installer.
 Stable installations ignore previews by both tag and GitHub prerelease status.
 

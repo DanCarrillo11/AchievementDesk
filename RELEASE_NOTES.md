@@ -24,9 +24,9 @@ installation identity, replaces the old executable names and creates renamed
 shortcuts. Existing preferences, favorites, activity history, reference snapshots
 and library cache stay under `%LOCALAPPDATA%\AchievementDesk`.
 
-The official repository and update channel remain
-`DanCarrillo11/AchievementDesk`. Stable installations can discover this release
-through their existing update settings.
+The official repository is now `DanCarrillo11/SteamAchievementManager`.
+GitHub redirects the previous repository URL, so existing installations can
+still discover releases through their saved update settings.
 
 Release checks cover the renamed frozen application and worker, synthetic
 library/achievement operations, minimum-size layouts, clean installation and

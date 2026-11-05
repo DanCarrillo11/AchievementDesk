@@ -109,7 +109,7 @@ def publish(folder):
     hashes = verify_assets(folder)
     repo = os.environ.get("GITHUB_REPOSITORY", "")
     commit = os.environ.get("GITHUB_SHA", "")
-    if (repo != "DanCarrillo11/AchievementDesk" or os.environ.get("GITHUB_REF") != "refs/heads/main"
+    if (repo != "DanCarrillo11/SteamAchievementManager" or os.environ.get("GITHUB_REF") != "refs/heads/main"
             or not re.fullmatch(r"[a-f0-9]{40}", commit)):
         raise RuntimeError("Publishing requires a trusted main-branch Actions run for this repository.")
     local_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()

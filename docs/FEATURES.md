@@ -185,7 +185,7 @@ Settings can check public GitHub releases from a configured `owner/repository`.
 It compares version tags, ignores drafts, and offers a release-page link. It never
 automatically downloads or runs an installer. Stable builds do not offer previews.
 
-**Source repository:** https://github.com/DanCarrillo11/AchievementDesk.
+**Source repository:** https://github.com/DanCarrillo11/SteamAchievementManager.
 The stable release channel is configured by default. Older empty settings migrate
 to this repository; a custom repository setting is preserved. Checks are manual,
 and stable installations ignore preview tags even if a release is mislabelled.
