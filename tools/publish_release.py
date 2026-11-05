@@ -11,7 +11,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from workspace import VERSION
+from workspace import APP_NAME, VERSION
 from updates import version_key
 
 
@@ -41,13 +41,13 @@ def request():
         raise ValueError("Windows numeric versions do not match the release.")
     installer = (ROOT / "installer.iss").read_text(encoding="utf-8")
     if (not re.search(r"^AppVersion=" + re.escape(VERSION) + r"\s*$", installer, re.M)
-            or not re.search(r"^OutputBaseFilename=AchievementDesk-" + re.escape(VERSION) + r"-Setup\s*$", installer, re.M)):
+            or not re.search(r"^OutputBaseFilename=" + re.escape(APP_NAME) + "-" + re.escape(VERSION) + r"-Setup\s*$", installer, re.M)):
         raise ValueError("Installer version does not match the release.")
     return value, notes
 
 
 def asset_names():
-    prefix = "AchievementDesk-" + VERSION
+    prefix = APP_NAME + "-" + VERSION
     return [prefix + "-Portable.zip", prefix + "-source.zip", prefix + "-Setup.exe"]
 
 
@@ -147,7 +147,7 @@ def publish(folder):
             return
     else:
         release = api(base + "/releases", payload=dict(tag_name=tag, target_commitish=commit,
-                      name="Achievement Desk " + VERSION, body=body, draft=True, prerelease=value["prerelease"]))
+                      name=APP_NAME + " " + VERSION, body=body, draft=True, prerelease=value["prerelease"]))
         if release.get("draft") is not True or release.get("target_commitish") != commit:
             raise RuntimeError("GitHub did not create the expected source-bound draft.")
     # Replacing files is limited to an unpublished draft, supporting safe retries.

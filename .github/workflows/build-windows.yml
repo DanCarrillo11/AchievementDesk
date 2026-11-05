@@ -37,11 +37,11 @@ jobs:
       - name: Run automated tests
         run: python -m unittest discover -s tests -v
       - name: Build the portable application
-        run: python -m PyInstaller --clean --noconfirm AchievementDesk.spec
+        run: python -m PyInstaller --clean --noconfirm SteamAchievementManager.spec
       - name: Verify frozen runtime and synthetic worker
-        run: python tools/verify_packaged.py dist/AchievementDesk
+        run: python tools/verify_packaged.py dist/SteamAchievementManager
       - name: Package portable and source archives
-        run: python tools/package_release.py dist/AchievementDesk release
+        run: python tools/package_release.py dist/SteamAchievementManager release
       - name: Compile Windows installer
         shell: pwsh
         env:
@@ -50,7 +50,7 @@ jobs:
           $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
           if (-not (Test-Path -LiteralPath $compiler)) { throw 'Inno Setup compiler is missing.' }
           $output = (Resolve-Path release).Path
-          $source = Join-Path $output ("AchievementDesk-" + $env:APP_VERSION + "-Portable")
+          $source = Join-Path $output ("SteamAchievementManager-" + $env:APP_VERSION + "-Portable")
           & $compiler "/DBuildSource=$source" "/DOutputFolder=$output" installer.iss
           if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
       - name: Verify clean installation and upgrade from the previous stable release
@@ -60,16 +60,16 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force .ci-artifacts | Out-Null
           $previous = Join-Path (Resolve-Path .ci-artifacts).Path 'previous-Setup.exe'
-          Invoke-WebRequest 'https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.1.0/AchievementDesk-1.1.0-Setup.exe' -OutFile $previous
-          $expected = '407c7d7b1caff6594103e36217e6be274afc2c7c3a566c79a6115168991c3a40'
+          Invoke-WebRequest 'https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.2.0/AchievementDesk-1.2.0-Setup.exe' -OutFile $previous
+          $expected = 'ef5c0507771ed7fe9d8a3228365d62f1cdba2925207fc13afb1449ce6bbfd0bf'
           if ((Get-FileHash -LiteralPath $previous -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Previous installer checksum mismatch.' }
-          python tools/verify_packaged.py "release/AchievementDesk-$env:APP_VERSION-Portable" --installer "release/AchievementDesk-$env:APP_VERSION-Setup.exe" --previous-installer $previous
+          python tools/verify_packaged.py "release/SteamAchievementManager-$env:APP_VERSION-Portable" --installer "release/SteamAchievementManager-$env:APP_VERSION-Setup.exe" --previous-installer $previous
           if ($LASTEXITCODE -ne 0) { throw 'Packaged installation checks failed.' }
       - name: Verify archive privacy and generate checksums
         run: python tools/publish_release.py checksums release
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: AchievementDesk-release-inputs
+          name: SteamAchievementManager-release-inputs
           path: |
             release/*-Portable.zip
             release/*-Setup.exe
@@ -94,7 +94,7 @@ jobs:
           python-version: '3.14'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
-          name: AchievementDesk-release-inputs
+          name: SteamAchievementManager-release-inputs
           path: release
       - name: Publish verified GitHub release
         env:

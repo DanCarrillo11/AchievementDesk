@@ -1,9 +1,9 @@
-# Achievement Desk
+# SteamAchievementManager
 
 A Windows desktop application for reading and managing Steam achievements through
 your locally signed-in Steam client. Interface and documentation are in English.
 
-**Version: 1.2.0.** Not affiliated with Valve. This is an independent
+**Version: 1.3.0.** Not affiliated with Valve. This is an independent
 Python implementation, with a Steam adapter adapted from SAM.API's interface
 layouts and connection approach. See THIRD_PARTY_NOTICES.txt.
 
@@ -33,7 +33,7 @@ and achievement states. This is not a screenshot of anyone's Steam account.*
 
 ## Optional installation
 
-Run **AchievementDesk-1.2.0-Setup.exe** to install for the current Windows
+Run **SteamAchievementManager-1.3.0-Setup.exe** to install for the current Windows
 user, with a Start menu shortcut and optional desktop shortcut. Administrator
 access is not required. The app does not open automatically after installation
 unless you select that option. Uninstalling retains local preferences and history.
@@ -43,7 +43,7 @@ The portable ZIP remains available and uses the same local data folder.
 
 1. Extract the entire Windows ZIP into a writable folder.
 2. Start Steam, sign in and stay online.
-3. Open **AchievementDesk.exe**. Keep **AchievementDeskWorker.exe** and
+3. Open **SteamAchievementManager.exe**. Keep **SteamAchievementManagerWorker.exe** and
    **_internal/** together with it.
 4. Wait for your Steam library to be detected. Click a game (installed or not)
    to load its achievements. Enter also activates a keyboard-selected game.
@@ -261,7 +261,7 @@ before the library results are displayed.
 To explore synthetic data without contacting Steam, run:
 
 ```powershell
-.\AchievementDesk.exe --demo
+.\SteamAchievementManager.exe --demo
 ```
 
 ## Automatic library detection
@@ -370,11 +370,11 @@ Build (PyInstaller 6.22.3 was used):
 ```powershell
 python -m pip install pyinstaller==6.22.3
 python tools/build_assets.py
-python -m PyInstaller --clean --noconfirm AchievementDesk.spec
+python -m PyInstaller --clean --noconfirm SteamAchievementManager.spec
 ```
 
 Copy README.md, LICENSE and THIRD_PARTY_NOTICES.txt alongside the generated
-executables when distributing. Distribute the complete `dist/AchievementDesk`
+executables when distributing. Distribute the complete `dist/SteamAchievementManager`
 folder, not the front-end executable alone. PyInstaller's shared files retain
 their bundled license information under `_internal`.
 

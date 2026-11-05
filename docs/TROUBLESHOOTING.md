@@ -59,8 +59,8 @@ on optional artwork requests.
 
 Download setup or the portable ZIP from the official
 [releases page](https://github.com/DanCarrillo11/AchievementDesk/releases/latest).
-Extract the entire portable archive, keeping `AchievementDesk.exe`,
-`AchievementDeskWorker.exe` and `_internal/` together. Setup installs for the
+Extract the entire portable archive, keeping `SteamAchievementManager.exe`,
+`SteamAchievementManagerWorker.exe` and `_internal/` together. Setup installs for the
 current user. Python is not required for either download. See
 [release preparation](RELEASES.md) for source builds and verification details.
 
@@ -84,7 +84,7 @@ optional and do not determine whether Steam accepts an achievement change.
 
 ## Updating from a preview
 
-Close Achievement Desk and run the new setup. For portable updates, extract to a
+Close SteamAchievementManager and run the new setup. For portable updates, extract to a
 new folder instead of mixing runtime files from different versions. Your data
 stays under `%LOCALAPPDATA%/AchievementDesk`. The official update channel is
 configured automatically; use **Settings → Updates → Check for updates**.

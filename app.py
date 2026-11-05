@@ -1,11 +1,11 @@
-"""Achievement Desk: English-language Windows desktop application."""
+"""SteamAchievementManager: English-language Windows desktop application."""
 import argparse
 
 
 def main():
-    from workspace import VERSION
-    parser = argparse.ArgumentParser(description=f"Achievement Desk {VERSION}")
-    parser.add_argument("--version", action="version", version=f"Achievement Desk {VERSION}")
+    from workspace import APP_NAME, VERSION
+    parser = argparse.ArgumentParser(description=f"{APP_NAME} {VERSION}")
+    parser.add_argument("--version", action="version", version=f"{APP_NAME} {VERSION}")
     parser.add_argument("--worker", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--demo", action="store_true", help="Use synthetic data without connecting to Steam")
     parser.add_argument("--library", action="store_true", help=argparse.SUPPRESS)

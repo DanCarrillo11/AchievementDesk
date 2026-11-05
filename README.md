@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="assets/logo-transparent.png" width="76" alt="Achievement Desk icon">
-  <h1>Achievement Desk</h1>
+  <img src="assets/logo-transparent.png" width="76" alt="SteamAchievementManager icon">
+  <h1>SteamAchievementManager</h1>
   <p>A focused desktop workspace for your Steam achievements.</p>
   <p><strong>Windows x64 · Stable release · English interface</strong></p>
   <p>
@@ -18,11 +18,11 @@ achievement states. These screenshots do not show a real user's account.*
 
 ## Availability
 
-**1.2.0** is the current stable release for Windows x64.
+**1.3.0** is the current stable release for Windows x64.
 
-- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.2.0/AchievementDesk-1.2.0-Setup.exe)
-- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.2.0/AchievementDesk-1.2.0-Portable.zip)
-- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.2.0)
+- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.3.0/SteamAchievementManager-1.3.0-Setup.exe)
+- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.3.0/SteamAchievementManager-1.3.0-Portable.zip)
+- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.3.0)
 
 The downloads include the runtime; Python is only needed for development.
 Live operations require an online, signed-in Steam desktop client. No Steam
@@ -35,8 +35,9 @@ password or API key is requested.
   Accessible games can appear even when they are not installed.
 - **Fast repeat launches.** After the first complete Steam library discovery, an
   account-specific snapshot loads on later launches once the signed-in Steam
-  account is verified. Use **Library tools → Refresh library** or **Ctrl+R** on
-  the library page to check for newly added, removed or installed games.
+  account is verified. Use the **Refresh library** button beside **All games**,
+  **Library tools → Refresh library**, or **Ctrl+R** on the library page to check
+  for newly added, removed or installed games.
 - **Pick up where you left off.** Remember each game's search, filter, sort,
   page and scroll position separately for each account.
 - **More room for achievements.** A compact game header and embedded details
@@ -77,7 +78,7 @@ password or API key is requested.
 
 1. Run the setup, or extract the **complete** portable ZIP into a folder.
 2. Start Steam, sign in and stay online.
-3. Open **AchievementDesk.exe** and let the first library scan complete.
+3. Open **SteamAchievementManager.exe** and let the first library scan complete.
 4. Select a game, prepare changes with the achievement switches, then choose
    **Review changes** and **Apply to Steam**.
 
@@ -86,12 +87,12 @@ Keep the portable application's helper and `_internal` folder beside its main
 executable. The library is remembered per account; use **Library tools → Refresh
 library** after acquiring games or changing installations.
 
-**Upgrading from an earlier version:** close Achievement Desk and run the new setup over
+**Upgrading from an earlier version:** close SteamAchievementManager and run the new setup over
 the existing installation. For the portable version, extract into a new folder.
 Preferences, favorites, library snapshots and history stay in the same local data
 folder. An empty update channel from older builds automatically uses this repository.
 
-To explore without Steam, start `AchievementDesk.exe --demo`. See the
+To explore without Steam, start `SteamAchievementManager.exe --demo`. See the
 [user guide](docs/FEATURES.md) for shortcuts, settings and advanced actions.
 
 ## Compatibility and completion
@@ -143,7 +144,7 @@ The automated suite requires no Steam account and performs no live achievement
 writes. [Architecture](docs/ARCHITECTURE.md) explains the UI, isolated worker and
 Steam adapter. [Contributing](CONTRIBUTING.md) covers changes and validation.
 
-Build locally with `requirements-build.txt` and `AchievementDesk.spec`.
+Build locally with `requirements-build.txt` and `SteamAchievementManager.spec`.
 The **Build Windows release** workflow verifies and packages the application.
 A version-matched release request on `main` publishes only after its checks pass.
 See [release preparation](docs/RELEASES.md).
@@ -166,7 +167,7 @@ Report reproducible problems through [Issues](https://github.com/DanCarrillo11/A
 
 An independent Python implementation with a native adapter adapted from
 [Steam Achievement Manager / SAM.API](https://github.com/gibbed/SteamAchievementManager).
-Achievement Desk is not affiliated with Valve or the SAM author.
+SteamAchievementManager is not affiliated with Valve or the SAM author.
 
 Original project code is [MIT licensed](LICENSE). Adapted SAM.API portions retain
 their zlib notice. Qt/PySide6 and artwork credits are documented in

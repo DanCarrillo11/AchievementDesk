@@ -1,6 +1,6 @@
 # Privacy and local data
 
-Achievement Desk does not request a Steam password, browser login cookie or API
+SteamAchievementManager does not request a Steam password, browser login cookie or API
 key. It has no telemetry or account-upload service.
 
 ## Local files

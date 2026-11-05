@@ -1,6 +1,6 @@
 # Contributing
 
-Achievement Desk is a Windows desktop preview. Keep changes focused and describe
+SteamAchievementManager is a Windows desktop preview. Keep changes focused and describe
 their observable behavior. The interface, documentation and issue reports use English.
 Follow the [community conduct guidelines](CODE_OF_CONDUCT.md).
 
