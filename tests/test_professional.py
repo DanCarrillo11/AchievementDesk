@@ -38,8 +38,18 @@ class WorkspaceTests(unittest.TestCase):
     def test_old_empty_update_channel_migrates_without_losing_preferences(self):
         atomic_json(self.root / "workspace.json", dict(settings=dict(release_repository="", compact=True)))
         loaded = Workspace(self.root)
-        self.assertEqual(loaded.settings["release_repository"], "DanCarrillo11/AchievementDesk")
+        self.assertEqual(loaded.settings["release_repository"], "DanCarrillo11/SteamAchievementManager")
         self.assertTrue(loaded.settings["compact"])
+
+    def test_renamed_official_repository_keeps_preferences_and_accounts(self):
+        self.workspace.settings.update(release_repository="DanCarrillo11/AchievementDesk", compact=True)
+        self.workspace.favorite("A", 10)
+        loaded = Workspace(self.root)
+        self.assertEqual(loaded.settings["release_repository"], "DanCarrillo11/SteamAchievementManager")
+        self.assertTrue(loaded.settings["compact"])
+        self.assertEqual(loaded.profile("A")["favorites"], [10])
+        loaded.save()
+        self.assertEqual(Workspace(self.root).settings["release_repository"], "DanCarrillo11/SteamAchievementManager")
 
     def test_custom_update_repository_is_preserved(self):
         self.workspace.settings["release_repository"] = "someone/CustomBuild"

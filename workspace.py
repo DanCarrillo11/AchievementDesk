@@ -8,7 +8,7 @@ from experience import clean_view
 
 VERSION = "1.3.0"
 APP_NAME = "SteamAchievementManager"
-RELEASE_REPOSITORY = "DanCarrillo11/AchievementDesk"
+RELEASE_REPOSITORY = "DanCarrillo11/SteamAchievementManager"
 DEFAULTS = dict(reveal_hidden=False, compact=False, reduce_motion=False, online_art=True,
                 achievement_sort="Steam order", library_filter="All games", width=1280, height=900,
                 release_repository=RELEASE_REPOSITORY, online_completion=True)
@@ -44,7 +44,7 @@ class Workspace:
                 self.settings[key] = value
         self.settings["width"] = min(3000, max(1020, self.settings["width"]))
         self.settings["height"] = min(2000, max(760, self.settings["height"]))
-        if not self.settings["release_repository"].strip():
+        if self.settings["release_repository"].strip().lower() in ("", "dancarrillo11/achievementdesk"):
             self.settings["release_repository"] = RELEASE_REPOSITORY
         self.accounts = data.get("accounts", {}) if isinstance(data.get("accounts"), dict) else {}
 

@@ -58,7 +58,7 @@ on optional artwork requests.
 ## Portable or installation problems
 
 Download setup or the portable ZIP from the official
-[releases page](https://github.com/DanCarrillo11/AchievementDesk/releases/latest).
+[releases page](https://github.com/DanCarrillo11/SteamAchievementManager/releases/latest).
 Extract the entire portable archive, keeping `SteamAchievementManager.exe`,
 `SteamAchievementManagerWorker.exe` and `_internal/` together. Setup installs for the
 current user. Python is not required for either download. See

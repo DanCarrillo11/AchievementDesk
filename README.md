@@ -20,9 +20,9 @@ achievement states. These screenshots do not show a real user's account.*
 
 **1.3.0** is the current stable release for Windows x64.
 
-- [Download the installer](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.3.0/SteamAchievementManager-1.3.0-Setup.exe)
-- [Download the portable ZIP](https://github.com/DanCarrillo11/AchievementDesk/releases/download/v1.3.0/SteamAchievementManager-1.3.0-Portable.zip)
-- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/AchievementDesk/releases/tag/v1.3.0)
+- [Download the installer](https://github.com/DanCarrillo11/SteamAchievementManager/releases/download/v1.3.0/SteamAchievementManager-1.3.0-Setup.exe)
+- [Download the portable ZIP](https://github.com/DanCarrillo11/SteamAchievementManager/releases/download/v1.3.0/SteamAchievementManager-1.3.0-Portable.zip)
+- [Release notes and SHA-256 checksums](https://github.com/DanCarrillo11/SteamAchievementManager/releases/tag/v1.3.0)
 
 The downloads include the runtime; Python is only needed for development.
 Live operations require an online, signed-in Steam desktop client. No Steam
@@ -90,7 +90,11 @@ library** after acquiring games or changing installations.
 **Upgrading from an earlier version:** close SteamAchievementManager and run the new setup over
 the existing installation. For the portable version, extract into a new folder.
 Preferences, favorites, library snapshots and history stay in the same local data
-folder. An empty update channel from older builds automatically uses this repository.
+folder.
+
+If upgrading from an existing 1.3.0 or older build after the GitHub rename, set
+**Settings → Release repository** to `DanCarrillo11/SteamAchievementManager` once
+before checking for updates.
 
 To explore without Steam, start `SteamAchievementManager.exe --demo`. See the
 [user guide](docs/FEATURES.md) for shortcuts, settings and advanced actions.
@@ -129,8 +133,8 @@ per game and account; no universal compatibility or Valve approval is claimed.
 Python 3.11+ x64 is required to run from source:
 
 ```powershell
-git clone https://github.com/DanCarrillo11/AchievementDesk.git
-cd AchievementDesk
+git clone https://github.com/DanCarrillo11/SteamAchievementManager.git
+cd SteamAchievementManager
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe app.py --demo
@@ -161,7 +165,7 @@ credentials. Artwork and completion requests can be disabled separately.
 Read the [privacy guide](docs/PRIVACY.md), [troubleshooting guide](docs/TROUBLESHOOTING.md)
 and [security reporting policy](SECURITY.md) before sharing logs or screenshots.
 
-Report reproducible problems through [Issues](https://github.com/DanCarrillo11/AchievementDesk/issues).
+Report reproducible problems through [Issues](https://github.com/DanCarrillo11/SteamAchievementManager/issues).
 
 ## Credits and license
 
