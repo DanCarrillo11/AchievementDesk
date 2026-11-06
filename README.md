@@ -90,7 +90,11 @@ library** after acquiring games or changing installations.
 **Upgrading from an earlier version:** close SteamAchievementManager and run the new setup over
 the existing installation. For the portable version, extract into a new folder.
 Preferences, favorites, library snapshots and history stay in the same local data
-folder. An empty update channel from older builds automatically uses this repository.
+folder.
+
+If upgrading from an existing 1.3.0 or older build after the GitHub rename, set
+**Settings → Release repository** to `DanCarrillo11/SteamAchievementManager` once
+before checking for updates.
 
 To explore without Steam, start `SteamAchievementManager.exe --demo`. See the
 [user guide](docs/FEATURES.md) for shortcuts, settings and advanced actions.

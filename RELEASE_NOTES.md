@@ -25,8 +25,10 @@ shortcuts. Existing preferences, favorites, activity history, reference snapshot
 and library cache stay under `%LOCALAPPDATA%\AchievementDesk`.
 
 The official repository is now `DanCarrillo11/SteamAchievementManager`.
-GitHub redirects the previous repository URL, so existing installations can
-still discover releases through their saved update settings.
+GitHub redirects the previous repository URL. If you already use 1.3.0 or an
+older build, set **Settings → Release repository** to
+`DanCarrillo11/SteamAchievementManager` once before checking for updates.
+Those builds validate release links against the repository name saved locally.
 
 Release checks cover the renamed frozen application and worker, synthetic
 library/achievement operations, minimum-size layouts, clean installation and

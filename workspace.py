@@ -44,7 +44,7 @@ class Workspace:
                 self.settings[key] = value
         self.settings["width"] = min(3000, max(1020, self.settings["width"]))
         self.settings["height"] = min(2000, max(760, self.settings["height"]))
-        if not self.settings["release_repository"].strip():
+        if self.settings["release_repository"].strip().lower() in ("", "dancarrillo11/achievementdesk"):
             self.settings["release_repository"] = RELEASE_REPOSITORY
         self.accounts = data.get("accounts", {}) if isinstance(data.get("accounts"), dict) else {}
 

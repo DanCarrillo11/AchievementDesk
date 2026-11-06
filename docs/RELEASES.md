@@ -60,10 +60,12 @@ also retain the corresponding source ZIP and checksum file for 14 days.
 
 ## Updates and upgrades
 
-Settings defaults to `DanCarrillo11/SteamAchievementManager`; older empty channels migrate
-to it without replacing a custom repository. Existing saved AchievementDesk
-channels continue to work through GitHub's repository redirect. Update checks run only on request
-and open a GitHub release page. They never download or execute an installer.
+Current source defaults to `DanCarrillo11/SteamAchievementManager` and migrates
+empty channels or the previous official repository without replacing a custom
+repository. Published 1.3.0 and earlier builds predate that migration: set
+**Settings → Release repository** to the new repository once before checking
+for updates. Update checks run only on request and open a GitHub release page.
+They never download or execute an installer.
 Stable installations ignore previews by both tag and GitHub prerelease status.
 
 Close SteamAchievementManager before upgrading with setup. Portable users should extract
